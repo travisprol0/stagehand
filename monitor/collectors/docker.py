@@ -38,9 +38,7 @@ def _cpu_percent_from_stats(stats: dict) -> float | None:
             cpu_stats["cpu_usage"]["total_usage"]
             - precpu_stats["cpu_usage"]["total_usage"]
         )
-        system_delta = (
-            cpu_stats["system_cpu_usage"] - precpu_stats["system_cpu_usage"]
-        )
+        system_delta = cpu_stats["system_cpu_usage"] - precpu_stats["system_cpu_usage"]
         if system_delta <= 0:
             return None
         online_cpus = cpu_stats.get("online_cpus", 1)

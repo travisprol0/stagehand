@@ -65,12 +65,15 @@ def test_dashboard_includes_host_chart_poll_region(client, host, host_snapshots)
 
 @pytest.mark.django_db
 def test_downsample_points_keeps_small_series():
-    points = [MetricSnapshot(
-        recorded_at=timezone.now(),
-        subject_type=MetricSubject.HOST,
-        cpu_percent=float(i),
-        memory_percent=float(i),
-    ) for i in range(50)]
+    points = [
+        MetricSnapshot(
+            recorded_at=timezone.now(),
+            subject_type=MetricSubject.HOST,
+            cpu_percent=float(i),
+            memory_percent=float(i),
+        )
+        for i in range(50)
+    ]
 
     result = downsample_points(points)
 

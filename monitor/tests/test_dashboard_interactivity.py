@@ -57,7 +57,7 @@ def test_container_row_includes_logs_button(client, host, container):
     response = client.get("/")
     content = response.content.decode()
 
-    assert f'/fragments/container/{container.pk}/logs/' in content
+    assert f"/fragments/container/{container.pk}/logs/" in content
     assert 'hx-target="#log-modal-body"' in content
 
 
@@ -71,8 +71,16 @@ def test_dashboard_loads_htmx_and_alpine_cdn(client, host):
 
 
 @pytest.mark.django_db
-def test_header_includes_refresh_dropdown(client, host):
-    response = client.get("/")
-    content = response.content.decode()
+def test_polled_fragments_do_not_use_load_trigger(client, host, host_snapshots):
+    """load on swapped outerHTML re-fires every swap and causes a request storm."""
+    urls = (
+        "/fragments/host-summary/",
+        "/fragments/containers/",
+        "/fragments/runners/",
+        "/fragments/charts/host/",
+    )
 
-    assert "Refresh now" in content
+    for url in urls:
+        content = client.get(url).content.decode()
+        assert 'hx-trigger="load' not in content
+        assert "every " in content and "s" in content

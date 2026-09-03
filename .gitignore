@@ -23,6 +23,7 @@ media/
 .env
 .env.*
 !.env.example
+docker-compose.override.yml
 
 # IDE / OS
 .idea/

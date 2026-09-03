@@ -144,6 +144,5 @@ def test_exited_container_no_snapshot(host):
 
     assert DockerContainer.objects.filter(host=host).count() == 1
     assert (
-        MetricSnapshot.objects.filter(subject_type=MetricSubject.CONTAINER).count()
-        == 0
+        MetricSnapshot.objects.filter(subject_type=MetricSubject.CONTAINER).count() == 0
     )

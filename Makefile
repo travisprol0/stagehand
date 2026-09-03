@@ -1,4 +1,4 @@
-.PHONY: test lint setup migrate
+.PHONY: test lint setup migrate up down start
 
 test:
 	./scripts/test.sh
@@ -12,3 +12,12 @@ setup:
 
 migrate:
 	.venv/bin/python manage.py migrate
+
+up:
+	docker compose up --build
+
+down:
+	docker compose down
+
+start:
+	./start.sh

@@ -1,0 +1,8 @@
+# Copy to docker-compose.override.yml for local development tweaks.
+# docker-compose.override.yml is gitignored and merged automatically by Compose.
+
+services:
+  web:
+    environment:
+      DEBUG: "1"
+      ALLOWED_HOSTS: localhost,127.0.0.1,talos

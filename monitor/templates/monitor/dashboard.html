@@ -70,7 +70,7 @@
         <div
           id="host-summary"
           hx-get="/fragments/host-summary/"
-          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-trigger="every {{ poll_seconds }}s"
           hx-swap="outerHTML"
         >
           {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
@@ -90,7 +90,7 @@
         <div
           id="container-table"
           hx-get="/fragments/containers/"
-          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-trigger="every {{ poll_seconds }}s"
           hx-swap="outerHTML"
         >
           {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
@@ -110,7 +110,7 @@
         <div
           id="host-chart"
           hx-get="/fragments/charts/host/"
-          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-trigger="every {{ poll_seconds }}s"
           hx-swap="outerHTML"
         >
           {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
@@ -130,7 +130,7 @@
         <div
           id="runner-list"
           hx-get="/fragments/runners/"
-          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-trigger="every {{ poll_seconds }}s"
           hx-swap="outerHTML"
         >
           {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}

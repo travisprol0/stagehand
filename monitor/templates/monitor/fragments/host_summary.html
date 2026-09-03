@@ -2,7 +2,7 @@
   id="host-summary"
   class="space-y-4"
   hx-get="/fragments/host-summary/"
-  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-trigger="every {{ poll_seconds }}s"
   hx-swap="outerHTML"
 >
   <div>

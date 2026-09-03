@@ -1,0 +1,11 @@
+.venv
+.git
+local-development
+.env
+__pycache__
+*.pyc
+.pytest_cache
+staticfiles
+*.md
+.dockerignore
+docker-compose.override.yml
