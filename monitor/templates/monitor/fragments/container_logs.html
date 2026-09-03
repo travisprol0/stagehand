@@ -1,0 +1,8 @@
+<div class="container-logs">
+  <h3>Logs: {{ container.name }}</h3>
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% else %}
+    <pre>{{ logs }}</pre>
+  {% endif %}
+</div>

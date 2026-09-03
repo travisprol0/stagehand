@@ -1,0 +1,8 @@
+<tr id="container-row-{{ container.pk }}">
+  <td>{{ container.name }}</td>
+  <td>{{ container.image }}</td>
+  <td>{{ container.status }}</td>
+  <td>{{ container.health }}</td>
+  <td>{% if container.cpu_percent is not None %}{{ container.cpu_percent|floatformat:1 }}%{% else %}—{% endif %}</td>
+  <td>{% if container.memory_bytes is not None %}{{ container.memory_bytes }}{% else %}—{% endif %}</td>
+</tr>

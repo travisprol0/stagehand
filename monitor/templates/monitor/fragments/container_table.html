@@ -1,0 +1,23 @@
+<div id="container-table">
+  {% if containers %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Status</th>
+          <th>Health</th>
+          <th>CPU</th>
+          <th>Memory</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for container in containers %}
+          {% include "monitor/fragments/container_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No containers found.</p>
+  {% endif %}
+</div>

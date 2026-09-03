@@ -1,0 +1,7 @@
+<div id="host-summary">
+  <h2>{{ host.name }}</h2>
+  <p>Hostname: {{ host.hostname }}</p>
+  <p>CPU: {{ host.cpu_percent|floatformat:1 }}%</p>
+  <p>Memory: {{ host.memory_percent|floatformat:1 }}%</p>
+  <p>Load: {{ host.load_avg_1|floatformat:2 }} / {{ host.load_avg_5|floatformat:2 }} / {{ host.load_avg_15|floatformat:2 }}</p>
+</div>

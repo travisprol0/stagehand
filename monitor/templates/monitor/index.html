@@ -7,21 +7,52 @@
     <style>
       body {
         font-family: system-ui, sans-serif;
-        max-width: 40rem;
-        margin: 4rem auto;
+        max-width: 56rem;
+        margin: 2rem auto;
         padding: 0 1rem;
         line-height: 1.5;
         color: #111;
       }
       h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-      p { color: #444; }
-      code { background: #f4f4f5; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
+      section { margin-bottom: 2rem; }
+      section h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
     </style>
   </head>
   <body>
     <h1>Stagehand</h1>
     <p>Infrastructure monitor for <strong>{{ host_name }}</strong>.</p>
-    <p>App is running. Health check: <a href="/health/">/health/</a></p>
-    <p>Dashboard UI ships in tickets 007–009.</p>
+
+    <section>
+      <h2>Host</h2>
+      {% if host %}
+        {% include "monitor/fragments/host_summary.html" %}
+      {% else %}
+        <div id="host-summary">
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Containers</h2>
+      {% if host %}
+        {% include "monitor/fragments/container_table.html" %}
+      {% else %}
+        <div id="container-table">
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Runners</h2>
+      {% if host %}
+        {% include "monitor/fragments/runner_list.html" %}
+      {% else %}
+        <div id="runner-list">
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
   </body>
 </html>

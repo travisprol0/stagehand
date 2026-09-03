@@ -1,0 +1,15 @@
+<div id="runner-list">
+  {% if runners %}
+    <ul>
+      {% for runner in runners %}
+        <li>
+          <strong>{{ runner.name }}</strong>
+          <span>{{ runner.status }}</span>
+          {% if runner.busy %}<span>(busy)</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No runners found.</p>
+  {% endif %}
+</div>
