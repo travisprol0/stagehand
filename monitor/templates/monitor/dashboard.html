@@ -1,0 +1,147 @@
+{% extends "monitor/base.html" %}
+
+{% block title %}Talos Monitor — {{ host_name }}{% endblock %}
+
+{% block body %}
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <header class="mb-8 border-b border-slate-200 pb-6 dark:border-slate-800">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Stagehand
+        </p>
+        <h1 class="mt-1 text-3xl font-bold tracking-tight">Talos Monitor</h1>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          Host <span class="font-semibold">{{ host_name }}</span>
+          {% if host %}
+            · Last updated {{ host.updated_at|date:"Y-m-d H:i:s" }} UTC
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+          @click="toggleDark()"
+        >
+          Toggle dark mode
+        </button>
+
+        <div class="relative" x-data="{ open: false }">
+          <button
+            type="button"
+            class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+            @click="open = !open"
+            aria-haspopup="true"
+            :aria-expanded="open"
+          >
+            Menu
+          </button>
+          <div
+            x-show="open"
+            x-transition
+            @click.outside="open = false"
+            class="absolute right-0 z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          >
+            <button
+              type="button"
+              class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+              @click="refreshAll()"
+            >
+              Refresh now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <section
+      id="host-section"
+      class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-1"
+      aria-labelledby="host-heading"
+    >
+      <h2 id="host-heading" class="mb-4 text-lg font-semibold">Host</h2>
+      {% if host %}
+        {% include "monitor/fragments/host_summary.html" %}
+      {% else %}
+        <div
+          id="host-summary"
+          hx-get="/fragments/host-summary/"
+          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section
+      id="containers-section"
+      class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-2"
+      aria-labelledby="containers-heading"
+    >
+      <h2 id="containers-heading" class="mb-4 text-lg font-semibold">Containers</h2>
+      {% if host %}
+        {% include "monitor/fragments/container_table.html" %}
+      {% else %}
+        <div
+          id="container-table"
+          hx-get="/fragments/containers/"
+          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section
+      id="runners-section"
+      class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-3"
+      aria-labelledby="runners-heading"
+    >
+      <h2 id="runners-heading" class="mb-4 text-lg font-semibold">GitHub Runners</h2>
+      {% if host %}
+        {% include "monitor/fragments/runner_list.html" %}
+      {% else %}
+        <div
+          id="runner-list"
+          hx-get="/fragments/runners/"
+          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div
+    id="log-modal"
+    x-show="logModalOpen"
+    x-transition
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+    style="display: none;"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="log-modal-title"
+  >
+    <div class="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <h2 id="log-modal-title" class="text-lg font-semibold">Container logs</h2>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+          @click="closeLogModal()"
+        >
+          Close
+        </button>
+      </div>
+      <div id="log-modal-body" class="max-h-[65vh] overflow-auto p-4 text-sm"></div>
+    </div>
+  </div>
+</main>
+{% endblock %}

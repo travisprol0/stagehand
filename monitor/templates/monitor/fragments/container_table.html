@@ -1,23 +1,31 @@
-<div id="container-table">
+<div
+  id="container-table"
+  hx-get="/fragments/containers/"
+  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-swap="outerHTML"
+>
   {% if containers %}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Image</th>
-          <th>Status</th>
-          <th>Health</th>
-          <th>CPU</th>
-          <th>Memory</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for container in containers %}
-          {% include "monitor/fragments/container_row.html" %}
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="monitor-table-scroll">
+      <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+        <thead class="bg-slate-50 dark:bg-slate-800">
+          <tr>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Name</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Image</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Health</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">CPU</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Memory</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+          {% for container in containers %}
+            {% include "monitor/fragments/container_row.html" %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p>No containers found.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400">No containers found.</p>
   {% endif %}
 </div>

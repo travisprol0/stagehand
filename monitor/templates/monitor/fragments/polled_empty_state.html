@@ -1,0 +1,8 @@
+<div
+  id="{{ element_id }}"
+  hx-get="{{ fragment_url }}"
+  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-swap="outerHTML"
+>
+  {% include "monitor/fragments/empty_state.html" %}
+</div>

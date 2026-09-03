@@ -1,7 +1,40 @@
-<div id="host-summary">
-  <h2>{{ host.name }}</h2>
-  <p>Hostname: {{ host.hostname }}</p>
-  <p>CPU: {{ host.cpu_percent|floatformat:1 }}%</p>
-  <p>Memory: {{ host.memory_percent|floatformat:1 }}%</p>
-  <p>Load: {{ host.load_avg_1|floatformat:2 }} / {{ host.load_avg_5|floatformat:2 }} / {{ host.load_avg_15|floatformat:2 }}</p>
+<div
+  id="host-summary"
+  class="space-y-4"
+  hx-get="/fragments/host-summary/"
+  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-swap="outerHTML"
+>
+  <div>
+    <p class="text-sm text-slate-500 dark:text-slate-400">Hostname</p>
+    <p class="text-xl font-semibold">{{ host.name }}</p>
+    <p class="text-sm text-slate-600 dark:text-slate-300">{{ host.hostname }}</p>
+  </div>
+
+  <div>
+    <div class="mb-1 flex items-center justify-between text-sm">
+      <span class="font-medium">CPU</span>
+      <span>{{ host.cpu_percent|floatformat:1 }}%</span>
+    </div>
+    {% include "monitor/fragments/progress_bar.html" with value=host.cpu_percent only %}
+  </div>
+
+  <div>
+    <div class="mb-1 flex items-center justify-between text-sm">
+      <span class="font-medium">Memory</span>
+      <span>{{ host.memory_percent|floatformat:1 }}%</span>
+    </div>
+    {% include "monitor/fragments/progress_bar.html" with value=host.memory_percent only %}
+  </div>
+
+  <div class="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+    <p class="font-medium text-slate-700 dark:text-slate-200">Load average</p>
+    <p class="mt-1 tabular-nums text-slate-600 dark:text-slate-300">
+      {{ host.load_avg_1|floatformat:2 }}
+      /
+      {{ host.load_avg_5|floatformat:2 }}
+      /
+      {{ host.load_avg_15|floatformat:2 }}
+    </p>
+  </div>
 </div>

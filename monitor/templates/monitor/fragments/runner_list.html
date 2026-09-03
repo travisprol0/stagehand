@@ -1,15 +1,33 @@
-<div id="runner-list">
+<div
+  id="runner-list"
+  hx-get="/fragments/runners/"
+  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-swap="outerHTML"
+>
   {% if runners %}
-    <ul>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {% for runner in runners %}
-        <li>
-          <strong>{{ runner.name }}</strong>
-          <span>{{ runner.status }}</span>
-          {% if runner.busy %}<span>(busy)</span>{% endif %}
-        </li>
+        <article class="rounded-lg border border-slate-200 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="font-medium">{{ runner.name }}</h3>
+            {% if runner.status == "active" %}
+              <span class="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">active</span>
+            {% elif runner.status == "idle" %}
+              <span class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">idle</span>
+            {% else %}
+              <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">offline</span>
+            {% endif %}
+          </div>
+          {% if runner.labels %}
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ runner.labels|join:", " }}</p>
+          {% endif %}
+          {% if runner.busy %}
+            <p class="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">Busy</p>
+          {% endif %}
+        </article>
       {% endfor %}
-    </ul>
+    </div>
   {% else %}
-    <p>No runners found.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400">No runners found.</p>
   {% endif %}
 </div>
