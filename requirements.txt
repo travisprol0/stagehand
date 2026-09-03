@@ -3,3 +3,4 @@ psycopg[binary]>=3.2,<4
 python-dotenv>=1.0,<2
 gunicorn>=23.0,<24
 psutil>=6.0,<7
+docker>=7.0,<8
