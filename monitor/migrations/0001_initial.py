@@ -5,94 +5,183 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Host',
+            name="Host",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(default='talos', max_length=64, unique=True)),
-                ('hostname', models.CharField(max_length=255)),
-                ('cpu_percent', models.FloatField(blank=True, null=True)),
-                ('memory_percent', models.FloatField(blank=True, null=True)),
-                ('memory_used_bytes', models.BigIntegerField(blank=True, null=True)),
-                ('memory_total_bytes', models.BigIntegerField(blank=True, null=True)),
-                ('load_avg_1', models.FloatField(blank=True, null=True)),
-                ('load_avg_5', models.FloatField(blank=True, null=True)),
-                ('load_avg_15', models.FloatField(blank=True, null=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(default="talos", max_length=64, unique=True)),
+                ("hostname", models.CharField(max_length=255)),
+                ("cpu_percent", models.FloatField(blank=True, null=True)),
+                ("memory_percent", models.FloatField(blank=True, null=True)),
+                ("memory_used_bytes", models.BigIntegerField(blank=True, null=True)),
+                ("memory_total_bytes", models.BigIntegerField(blank=True, null=True)),
+                ("load_avg_1", models.FloatField(blank=True, null=True)),
+                ("load_avg_5", models.FloatField(blank=True, null=True)),
+                ("load_avg_15", models.FloatField(blank=True, null=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='DockerContainer',
+            name="DockerContainer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('container_id', models.CharField(db_index=True, max_length=64)),
-                ('name', models.CharField(max_length=255)),
-                ('image', models.CharField(max_length=512)),
-                ('status', models.CharField(max_length=32)),
-                ('health', models.CharField(blank=True, default='none', max_length=32)),
-                ('cpu_percent', models.FloatField(blank=True, null=True)),
-                ('memory_bytes', models.BigIntegerField(blank=True, null=True)),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('host', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='containers', to='monitor.host')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("container_id", models.CharField(db_index=True, max_length=64)),
+                ("name", models.CharField(max_length=255)),
+                ("image", models.CharField(max_length=512)),
+                ("status", models.CharField(max_length=32)),
+                ("health", models.CharField(blank=True, default="none", max_length=32)),
+                ("cpu_percent", models.FloatField(blank=True, null=True)),
+                ("memory_bytes", models.BigIntegerField(blank=True, null=True)),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "host",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="containers",
+                        to="monitor.host",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='MetricSnapshot',
+            name="MetricSnapshot",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('recorded_at', models.DateTimeField(db_index=True)),
-                ('subject_type', models.CharField(choices=[('host', 'Host'), ('container', 'Container')], max_length=16)),
-                ('cpu_percent', models.FloatField(blank=True, null=True)),
-                ('memory_percent', models.FloatField(blank=True, null=True)),
-                ('memory_bytes', models.BigIntegerField(blank=True, null=True)),
-                ('container', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='snapshots', to='monitor.dockercontainer')),
-                ('host', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='snapshots', to='monitor.host')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("recorded_at", models.DateTimeField(db_index=True)),
+                (
+                    "subject_type",
+                    models.CharField(
+                        choices=[("host", "Host"), ("container", "Container")],
+                        max_length=16,
+                    ),
+                ),
+                ("cpu_percent", models.FloatField(blank=True, null=True)),
+                ("memory_percent", models.FloatField(blank=True, null=True)),
+                ("memory_bytes", models.BigIntegerField(blank=True, null=True)),
+                (
+                    "container",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="snapshots",
+                        to="monitor.dockercontainer",
+                    ),
+                ),
+                (
+                    "host",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="snapshots",
+                        to="monitor.host",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-recorded_at'],
+                "ordering": ["-recorded_at"],
             },
         ),
         migrations.CreateModel(
-            name='GitHubRunner',
+            name="GitHubRunner",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('runner_id', models.BigIntegerField()),
-                ('name', models.CharField(max_length=255)),
-                ('labels', models.JSONField(default=list)),
-                ('status', models.CharField(choices=[('idle', 'Idle'), ('active', 'Active'), ('offline', 'Offline')], max_length=16)),
-                ('busy', models.BooleanField(default=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('host', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='runners', to='monitor.host')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("runner_id", models.BigIntegerField()),
+                ("name", models.CharField(max_length=255)),
+                ("labels", models.JSONField(default=list)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("idle", "Idle"),
+                            ("active", "Active"),
+                            ("offline", "Offline"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("busy", models.BooleanField(default=False)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "host",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="runners",
+                        to="monitor.host",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['name'],
-                'constraints': [models.UniqueConstraint(fields=('host', 'runner_id'), name='uniq_runner_per_host')],
+                "ordering": ["name"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("host", "runner_id"), name="uniq_runner_per_host"
+                    )
+                ],
             },
         ),
         migrations.AddConstraint(
-            model_name='dockercontainer',
-            constraint=models.UniqueConstraint(fields=('host', 'container_id'), name='uniq_container_per_host'),
+            model_name="dockercontainer",
+            constraint=models.UniqueConstraint(
+                fields=("host", "container_id"), name="uniq_container_per_host"
+            ),
         ),
         migrations.AddIndex(
-            model_name='metricsnapshot',
-            index=models.Index(fields=['subject_type', 'host', 'recorded_at'], name='metrics_host_time_idx'),
+            model_name="metricsnapshot",
+            index=models.Index(
+                fields=["subject_type", "host", "recorded_at"],
+                name="metrics_host_time_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='metricsnapshot',
-            index=models.Index(condition=models.Q(('container__isnull', False)), fields=['container', 'recorded_at'], name='metrics_container_time_idx'),
+            model_name="metricsnapshot",
+            index=models.Index(
+                condition=models.Q(("container__isnull", False)),
+                fields=["container", "recorded_at"],
+                name="metrics_container_time_idx",
+            ),
         ),
     ]

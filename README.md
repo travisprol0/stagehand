@@ -46,6 +46,10 @@ chmod +x scripts/test.sh
 
 Tickets 003+ require writing failing tests first, then implementation. See `local-development/AGENT-CHECKLIST.md`.
 
+```bash
+python manage.py collect_metrics --once   # single metrics iteration
+```
+
 ## Environment variables
 
 See [`.env.example`](.env.example). Default database: `stagehand` / `stagehand` on `localhost:5433`.
