@@ -116,3 +116,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Monitor settings (used by later tickets)
 HOST_NAME = os.environ.get("HOST_NAME", "talos")
 METRICS_INTERVAL_SECONDS = int(os.environ.get("METRICS_INTERVAL_SECONDS", "10"))
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_ORG = os.environ.get("GITHUB_ORG", "")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
+GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com")
