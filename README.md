@@ -36,6 +36,16 @@ python manage.py runserver
 
 Use the venv — Ubuntu does not provide a global `python` command.
 
+## Testing (TDD from ticket 003)
+
+```bash
+pip install -r requirements-dev.txt
+chmod +x scripts/test.sh
+./scripts/test.sh          # or: make test
+```
+
+Tickets 003+ require writing failing tests first, then implementation. See `local-development/AGENT-CHECKLIST.md`.
+
 ## Environment variables
 
 See [`.env.example`](.env.example). Default database: `stagehand` / `stagehand` on `localhost:5433`.
