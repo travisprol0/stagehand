@@ -18,6 +18,11 @@ urlpatterns = [
     ),
     path("fragments/runners/", fragments.runners, name="fragment-runners"),
     path(
+        "fragments/charts/host/",
+        fragments.chart_host_metrics,
+        name="fragment-chart-host",
+    ),
+    path(
         "fragments/container/<int:pk>/logs/",
         fragments.container_logs,
         name="fragment-container-logs",

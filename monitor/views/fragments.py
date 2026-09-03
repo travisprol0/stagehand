@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, render
 from docker.errors import DockerException
 
 from monitor.models import DockerContainer
+from monitor.services.charts import get_host_chart_data
 from monitor.services.dashboard import (
     get_current_host,
     get_host_containers,
@@ -88,6 +89,27 @@ def runners(request):
         request,
         "monitor/fragments/runner_list.html",
         {"runners": runner_rows, **_poll_context()},
+    )
+
+
+def chart_host_metrics(request):
+    host = get_current_host()
+    if host is None:
+        return render(
+            request,
+            "monitor/fragments/polled_empty_state.html",
+            {
+                "element_id": "host-chart",
+                "fragment_url": "/fragments/charts/host/",
+                "message": "No host data yet. Start the metrics collector.",
+                **_poll_context(),
+            },
+        )
+    chart = get_host_chart_data(host)
+    return render(
+        request,
+        "monitor/fragments/host_chart.html",
+        {"chart": chart, **_poll_context()},
     )
 
 

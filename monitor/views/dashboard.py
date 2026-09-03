@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render
 
+from monitor.services.charts import get_host_chart_data
 from monitor.services.dashboard import (
     get_current_host,
     get_host_containers,
@@ -20,5 +21,6 @@ def index(request):
             "containers": get_host_containers(host) if host else [],
             "runners": get_host_runners(host) if host else [],
             "poll_seconds": poll_seconds,
+            "chart": get_host_chart_data(host) if host else None,
         },
     )

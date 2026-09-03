@@ -30,6 +30,10 @@ function dashboardChrome() {
         target: "#runner-list",
         swap: "outerHTML",
       });
+      htmx.ajax("GET", "/fragments/charts/host/", {
+        target: "#host-chart",
+        swap: "outerHTML",
+      });
       this.menuOpen = false;
     },
   };

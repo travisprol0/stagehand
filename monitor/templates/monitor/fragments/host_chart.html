@@ -1,0 +1,73 @@
+<div
+  id="host-chart"
+  hx-get="/fragments/charts/host/"
+  hx-trigger="load, every {{ poll_seconds }}s"
+  hx-swap="outerHTML"
+>
+  {% if chart %}
+    <div class="space-y-6">
+      <div>
+        <div class="mb-2 flex items-center justify-between text-sm">
+          <span class="font-medium text-blue-600 dark:text-blue-400">CPU %</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
+        </div>
+        <svg
+          viewBox="0 0 400 100"
+          class="h-28 w-full text-blue-600 dark:text-blue-400"
+          role="img"
+          aria-label="Host CPU usage over the last hour"
+        >
+          <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
+          <polyline
+            points="{{ chart.cpu_polyline }}"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <div>
+        <div class="mb-2 flex items-center justify-between text-sm">
+          <span class="font-medium text-emerald-600 dark:text-emerald-400">Memory %</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
+        </div>
+        <svg
+          viewBox="0 0 400 100"
+          class="h-28 w-full text-emerald-600 dark:text-emerald-400"
+          role="img"
+          aria-label="Host memory usage over the last hour"
+        >
+          <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
+          <polyline
+            points="{{ chart.memory_polyline }}"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+        <span>{{ chart.start_label }}</span>
+        <span class="inline-flex items-center gap-3">
+          <span class="inline-flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+            CPU
+          </span>
+          <span class="inline-flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
+            Memory
+          </span>
+        </span>
+        <span>{{ chart.end_label }}</span>
+      </div>
+    </div>
+  {% else %}
+    {% include "monitor/fragments/empty_state.html" with message="No history yet — wait for collector." %}
+  {% endif %}
+</div>

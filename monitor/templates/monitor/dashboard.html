@@ -99,6 +99,26 @@
     </section>
 
     <section
+      id="charts-section"
+      class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-3"
+      aria-labelledby="charts-heading"
+    >
+      <h2 id="charts-heading" class="mb-4 text-lg font-semibold">Metrics history</h2>
+      {% if host %}
+        {% include "monitor/fragments/host_chart.html" with chart=chart %}
+      {% else %}
+        <div
+          id="host-chart"
+          hx-get="/fragments/charts/host/"
+          hx-trigger="load, every {{ poll_seconds }}s"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section
       id="runners-section"
       class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:col-span-3"
       aria-labelledby="runners-heading"
