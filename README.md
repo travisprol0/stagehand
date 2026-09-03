@@ -130,6 +130,24 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 | `GITHUB_ORG` | — | Organization slug for org-level runners |
 | `GITHUB_REPO` | — | `owner/repo` for repo-level runners (use org **or** repo) |
 | `GITHUB_API_URL` | `https://api.github.com` | GitHub API base URL |
+
+### GitHub self-hosted runners
+
+Runners only appear if the collector can list them via the GitHub API. That means:
+
+1. **`GITHUB_TOKEN`** is set in `.env` (and the `collector` service sees it if using Compose).
+2. **Scope matches registration** — if runners were added under a specific repo (Settings → Actions → Runners), set `GITHUB_REPO=owner/repo` for **that** repo and leave `GITHUB_ORG` empty. If they are org-wide runners, set `GITHUB_ORG` instead.
+3. **Collector is running** — `./start.sh --collector`, or the Compose `collector` service.
+
+Verify configuration:
+
+```bash
+python manage.py check_github_runners
+```
+
+Classic PAT scopes: `repo` for repo-level runners; `admin:org` for org-level runners. Fine-grained tokens need Actions read on the repo or org.
+
+After changing `.env`, restart the collector (`docker compose restart collector` or restart `./start.sh --collector`).
 | `DOCKER_HOST` | local socket | Docker daemon URL (optional) |
 
 ## Running tests

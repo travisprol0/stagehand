@@ -6,6 +6,7 @@ from django.conf import settings
 
 from monitor.collectors.base import BaseCollector
 from monitor.models import GitHubRunner, RunnerStatus, get_or_create_host
+from monitor.services.github_runners import runners_endpoint as _runners_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -16,16 +17,6 @@ def map_runner_status(api_status: str, busy: bool) -> str:
     if busy:
         return RunnerStatus.ACTIVE
     return RunnerStatus.IDLE
-
-
-def _runners_endpoint() -> str | None:
-    api_url = settings.GITHUB_API_URL.rstrip("/")
-    if settings.GITHUB_ORG:
-        return f"{api_url}/orgs/{settings.GITHUB_ORG}/actions/runners"
-    if settings.GITHUB_REPO:
-        owner, repo = settings.GITHUB_REPO.split("/", 1)
-        return f"{api_url}/repos/{owner}/{repo}/actions/runners"
-    return None
 
 
 def _parse_label_names(labels: list) -> list[str]:
@@ -77,6 +68,8 @@ class GitHubRunnerCollector(BaseCollector):
                 "Set GITHUB_ORG or GITHUB_REPO to collect GitHub runner status"
             )
             return
+
+        logger.info("Fetching GitHub runners from %s", endpoint)
 
         host = get_or_create_host()
         headers = {
