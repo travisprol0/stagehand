@@ -1,16 +1,16 @@
 {% load monitor_extras %}
 <div
-  class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+  class="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800"
   role="progressbar"
   aria-valuemin="0"
   aria-valuemax="100"
   aria-valuenow="{{ value|default:0|floatformat:0 }}"
 >
   <div
-    class="h-1.5 rounded-full {{ value|bar_color }}"
+    class="h-2 rounded-full {{ value|bar_color }}"
     style="width: {{ value|default:0 }}%"
   ></div>
 </div>
 {% if label %}
-  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ label }}</p>
+  <p class="mt-1 text-xs text-slate-500 dark:text-zinc-400">{{ label }}</p>
 {% endif %}

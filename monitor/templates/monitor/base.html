@@ -4,11 +4,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Talos Monitor{% endblock %}</title>
+    <title>{% block title %}Stagehand{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["IBM Plex Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+              mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+            },
+          },
+        },
       };
     </script>
     <style>[x-cloak] { display: none !important; }</style>
@@ -19,7 +27,7 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body
-    class="min-h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+    class="min-h-full bg-slate-100 text-slate-900 antialiased dark:bg-zinc-950 dark:text-zinc-100"
     @open-log-modal.window="openLogModal()"
     @keydown.escape.window="closeLogModal()"
   >

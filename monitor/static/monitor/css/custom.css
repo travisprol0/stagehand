@@ -1,3 +1,108 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+
+:root {
+  --panel-radius: 0.625rem;
+}
+
+body {
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-mono,
+.tabular-nums,
+.container-logs pre {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.panel {
+  border-radius: var(--panel-radius);
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+.dark .panel {
+  border-color: rgb(39 39 42);
+  background: rgb(24 24 27);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.panel-muted {
+  border-radius: var(--panel-radius);
+  border: 1px dashed rgb(203 213 225);
+  background: rgb(248 250 252);
+}
+
+.dark .panel-muted {
+  border-color: rgb(63 63 70);
+  background: rgb(24 24 27 / 0.5);
+}
+
 .monitor-table-scroll {
   overflow-x: auto;
+}
+
+.monitor-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgb(248 250 252);
+}
+
+.dark .monitor-table-scroll thead th {
+  background: rgb(24 24 27);
+}
+
+.live-pulse {
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.busy-pulse {
+  animation: busy-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes busy-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(14 165 233 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(14 165 233 / 0);
+  }
+}
+
+.container-logs h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(148 163 184);
+}
+
+.container-logs pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: rgb(226 232 240);
+}
+
+.container-logs .error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: rgb(248 113 113);
 }

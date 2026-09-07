@@ -7,26 +7,41 @@
   {% if chart %}
     <div>
       <div class="mb-2 flex items-center justify-between text-sm">
-        <span class="font-medium text-slate-700 dark:text-slate-200">CPU and memory</span>
-        <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
+        <span class="font-medium text-slate-700 dark:text-zinc-200">CPU and memory</span>
+        <span class="text-xs text-slate-500 dark:text-zinc-400">Last hour</span>
       </div>
       <svg
         viewBox="0 0 400 100"
-        class="h-36 w-full"
+        class="h-40 w-full"
         role="img"
         aria-label="Host CPU and memory usage over the last hour"
       >
-        <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
+        <defs>
+          <linearGradient id="cpu-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="#0284c7" stop-opacity="0.02" />
+          </linearGradient>
+          <linearGradient id="memory-fill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="#059669" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="#059669" stop-opacity="0.02" />
+          </linearGradient>
+        </defs>
+        <line x1="28" y1="8" x2="392" y2="8" class="stroke-slate-200 dark:stroke-zinc-700" stroke-width="1" />
+        <line x1="28" y1="50" x2="392" y2="50" class="stroke-slate-200 dark:stroke-zinc-700" stroke-dasharray="3 4" stroke-width="1" />
+        <line x1="28" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-zinc-700" stroke-width="1" />
+        <text x="4" y="12" class="fill-slate-400 dark:fill-zinc-500" font-size="8">100</text>
+        <text x="8" y="54" class="fill-slate-400 dark:fill-zinc-500" font-size="8">50</text>
+        <text x="12" y="94" class="fill-slate-400 dark:fill-zinc-500" font-size="8">0</text>
         {% if chart.cpu_area %}
-          <polygon points="{{ chart.cpu_area }}" class="fill-blue-600/15 dark:fill-blue-400/20" />
+          <polygon points="{{ chart.cpu_area }}" fill="url(#cpu-fill)" />
         {% endif %}
         {% if chart.memory_area %}
-          <polygon points="{{ chart.memory_area }}" class="fill-emerald-600/15 dark:fill-emerald-400/20" />
+          <polygon points="{{ chart.memory_area }}" fill="url(#memory-fill)" />
         {% endif %}
         <polyline
           points="{{ chart.cpu_polyline }}"
           fill="none"
-          class="stroke-blue-600 dark:stroke-blue-400"
+          class="stroke-sky-600 dark:stroke-sky-400"
           stroke-width="2"
           stroke-linejoin="round"
           stroke-linecap="round"
@@ -40,11 +55,11 @@
           stroke-linecap="round"
         />
       </svg>
-      <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+      <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
         <span>{{ chart.start_label }}</span>
         <span class="inline-flex items-center gap-3">
           <span class="inline-flex items-center gap-1">
-            <span class="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+            <span class="h-2 w-2 rounded-full bg-sky-600 dark:bg-sky-400"></span>
             CPU
           </span>
           <span class="inline-flex items-center gap-1">

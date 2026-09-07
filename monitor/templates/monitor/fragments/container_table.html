@@ -4,27 +4,27 @@
   hx-trigger="every {{ poll_seconds }}s"
   hx-swap="outerHTML"
 >
-  <div class="mb-4 flex items-baseline justify-between gap-3">
-    <h2 id="containers-heading" class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Containers</h2>
+  <div class="mb-3 flex items-baseline justify-between gap-3">
+    <h2 id="containers-heading" class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Containers</h2>
     {% if container_stats %}
-      <p class="text-xs text-slate-500 dark:text-slate-400">{{ container_stats.running }} running</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-400">{{ container_stats.running }} running</p>
     {% endif %}
   </div>
   {% if containers %}
     <div class="monitor-table-scroll">
-      <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+      <table class="min-w-full divide-y divide-slate-200 dark:divide-zinc-800">
         <thead>
           <tr>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Name</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Image</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Health</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">CPU</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Memory</th>
-            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Name</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Image</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Status</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Health</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">CPU</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Memory</th>
+            <th scope="col" class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+        <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/80">
           {% for container in containers %}
             {% include "monitor/fragments/container_row.html" %}
           {% endfor %}
@@ -32,6 +32,6 @@
       </table>
     </div>
   {% else %}
-    <p class="text-sm text-slate-500 dark:text-slate-400">No containers found.</p>
+    <p class="text-sm text-slate-500 dark:text-zinc-400">No containers found.</p>
   {% endif %}
 </div>

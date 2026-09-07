@@ -1,49 +1,64 @@
 {% load monitor_extras %}
-<tr id="container-row-{{ container.pk }}" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-  <td class="px-3 py-3 text-sm font-medium">
+<tr id="container-row-{{ container.pk }}" class="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40">
+  <td class="px-3 py-2 text-sm font-medium">
     <div>{{ container.name }}</div>
     {% if container.started_at %}
-      <div class="mt-0.5 text-xs font-normal text-slate-500 dark:text-slate-400">up {{ container.started_at|duration_short }}</div>
+      <div class="mt-0.5 font-mono text-[0.7rem] font-normal text-slate-500 dark:text-zinc-400">up {{ container.started_at|duration_short }}</div>
     {% endif %}
   </td>
-  <td class="max-w-[12rem] px-3 py-3 text-sm text-slate-600 dark:text-slate-300">
+  <td class="max-w-[12rem] px-3 py-2 font-mono text-xs text-slate-600 dark:text-zinc-300">
     <span class="block truncate" title="{{ container.image }}">{{ container.image }}</span>
   </td>
-  <td class="px-3 py-3 text-sm">
+  <td class="px-3 py-2 text-sm">
     {% if container.status == "running" %}
-      <span class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">running</span>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+        running
+      </span>
     {% elif container.status == "exited" %}
-      <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">exited</span>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+        exited
+      </span>
     {% else %}
-      <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{{ container.status }}</span>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+        {{ container.status }}
+      </span>
     {% endif %}
   </td>
-  <td class="px-3 py-3 text-sm">
+  <td class="px-3 py-2 text-sm">
     {% if container.health == "unhealthy" %}
-      <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-300">unhealthy</span>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+        unhealthy
+      </span>
     {% elif container.health == "healthy" %}
-      <span class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">healthy</span>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+        healthy
+      </span>
     {% else %}
-      <span class="text-slate-500 dark:text-slate-400">{{ container.health|default:"none" }}</span>
+      <span class="text-xs text-slate-500 dark:text-zinc-400">{{ container.health|default:"none" }}</span>
     {% endif %}
   </td>
-  <td class="px-3 py-3 text-sm">
+  <td class="px-3 py-2 text-sm">
     {% if container.cpu_percent is not None %}
       <div class="min-w-[8rem]">
-        <div class="mb-1 text-xs tabular-nums">{{ container.cpu_percent|floatformat:1 }}%</div>
+        <div class="mb-1 font-mono text-xs tabular-nums">{{ container.cpu_percent|floatformat:1 }}%</div>
         {% include "monitor/fragments/progress_bar.html" with value=container.cpu_percent only %}
       </div>
     {% else %}
       —
     {% endif %}
   </td>
-  <td class="px-3 py-3 text-sm tabular-nums">
+  <td class="px-3 py-2 font-mono text-sm tabular-nums">
     {% if container.memory_bytes is not None %}{{ container.memory_bytes|filesizeformat }}{% else %}—{% endif %}
   </td>
-  <td class="px-3 py-3 text-sm">
+  <td class="px-3 py-2 text-sm">
     <button
       type="button"
-      class="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+      class="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
       hx-get="/fragments/container/{{ container.pk }}/logs/"
       hx-target="#log-modal-body"
       hx-swap="innerHTML"
