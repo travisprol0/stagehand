@@ -4,10 +4,16 @@
   hx-trigger="every {{ poll_seconds }}s"
   hx-swap="outerHTML"
 >
+  <div class="mb-4 flex items-baseline justify-between gap-3">
+    <h2 id="containers-heading" class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Containers</h2>
+    {% if container_stats %}
+      <p class="text-xs text-slate-500 dark:text-slate-400">{{ container_stats.running }} running</p>
+    {% endif %}
+  </div>
   {% if containers %}
     <div class="monitor-table-scroll">
       <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-        <thead class="bg-slate-50 dark:bg-slate-800">
+        <thead>
           <tr>
             <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Name</th>
             <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Image</th>

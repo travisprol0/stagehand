@@ -22,7 +22,8 @@ def test_host_chart_fragment_renders_polylines(client, host, host_snapshots):
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert "<polyline" in content or "<path" in content
+    assert content.count("<polyline") == 2
+    assert content.count("<svg") == 1
     assert "CPU" in content
     assert "Memory" in content
 

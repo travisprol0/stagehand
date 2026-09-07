@@ -1,6 +1,14 @@
+{% load monitor_extras %}
 <tr id="container-row-{{ container.pk }}" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-  <td class="px-3 py-3 text-sm font-medium">{{ container.name }}</td>
-  <td class="px-3 py-3 text-sm text-slate-600 dark:text-slate-300">{{ container.image }}</td>
+  <td class="px-3 py-3 text-sm font-medium">
+    <div>{{ container.name }}</div>
+    {% if container.started_at %}
+      <div class="mt-0.5 text-xs font-normal text-slate-500 dark:text-slate-400">up {{ container.started_at|duration_short }}</div>
+    {% endif %}
+  </td>
+  <td class="max-w-[12rem] px-3 py-3 text-sm text-slate-600 dark:text-slate-300">
+    <span class="block truncate" title="{{ container.image }}">{{ container.image }}</span>
+  </td>
   <td class="px-3 py-3 text-sm">
     {% if container.status == "running" %}
       <span class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">running</span>
@@ -30,7 +38,7 @@
     {% endif %}
   </td>
   <td class="px-3 py-3 text-sm tabular-nums">
-    {% if container.memory_bytes is not None %}{{ container.memory_bytes }}{% else %}—{% endif %}
+    {% if container.memory_bytes is not None %}{{ container.memory_bytes|filesizeformat }}{% else %}—{% endif %}
   </td>
   <td class="px-3 py-3 text-sm">
     <button

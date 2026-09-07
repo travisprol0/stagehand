@@ -25,6 +25,14 @@ def host(db):
         load_avg_1=1.2,
         load_avg_5=0.9,
         load_avg_15=0.7,
+        boot_time=timezone.now() - timezone.timedelta(days=12, hours=4),
+        disk_percent=40.0,
+        disk_used_bytes=100_000_000_000,
+        disk_total_bytes=250_000_000_000,
+        net_bytes_sent=1_000_000,
+        net_bytes_recv=2_000_000,
+        net_sent_bps=80_000,
+        net_recv_bps=1_200_000,
     )
 
 
@@ -39,6 +47,7 @@ def container(db, host):
         health="healthy",
         cpu_percent=5.0,
         memory_bytes=128_000_000,
+        started_at=timezone.now() - timezone.timedelta(hours=3),
     )
 
 

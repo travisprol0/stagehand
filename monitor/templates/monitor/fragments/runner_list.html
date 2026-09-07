@@ -4,6 +4,14 @@
   hx-trigger="every {{ poll_seconds }}s"
   hx-swap="outerHTML"
 >
+  <div class="mb-4 flex items-baseline justify-between gap-3">
+    <h2 id="runners-heading" class="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Runners</h2>
+    {% if runner_stats %}
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        {{ runner_stats.idle }} idle · {{ runner_stats.active }} active · {{ runner_stats.offline }} offline
+      </p>
+    {% endif %}
+  </div>
   {% if runners %}
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {% for runner in runners %}

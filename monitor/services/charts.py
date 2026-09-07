@@ -17,6 +17,8 @@ CHART_PADDING = 8
 class HostChartData:
     cpu_polyline: str
     memory_polyline: str
+    cpu_area: str
+    memory_area: str
     time_labels: list[str]
     start_label: str
     end_label: str
@@ -61,6 +63,30 @@ def build_polyline(
     return " ".join(coords)
 
 
+def build_area(
+    values: list[float],
+    *,
+    width: int = CHART_WIDTH,
+    height: int = CHART_HEIGHT,
+    padding: int = CHART_PADDING,
+    value_max: float = 100.0,
+) -> str:
+    line = build_polyline(
+        values,
+        width=width,
+        height=height,
+        padding=padding,
+        value_max=value_max,
+    )
+    if not line:
+        return ""
+    points = line.split()
+    first_x = points[0].split(",")[0]
+    last_x = points[-1].split(",")[0]
+    baseline = height - padding
+    return f"{first_x},{baseline:.1f} {line} {last_x},{baseline:.1f}"
+
+
 def get_host_chart_data(host: Host, *, minutes: int = 60) -> HostChartData | None:
     snapshots = list(MetricSnapshot.objects.for_host(host, minutes=minutes))
     snapshots = downsample_points(snapshots)
@@ -74,6 +100,8 @@ def get_host_chart_data(host: Host, *, minutes: int = 60) -> HostChartData | Non
     return HostChartData(
         cpu_polyline=build_polyline(cpu_values),
         memory_polyline=build_polyline(memory_values),
+        cpu_area=build_area(cpu_values),
+        memory_area=build_area(memory_values),
         time_labels=time_labels,
         start_label=time_labels[0],
         end_label=time_labels[-1],

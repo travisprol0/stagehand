@@ -26,7 +26,9 @@ def github_config_issues() -> list[str]:
     if not settings.GITHUB_TOKEN:
         issues.append("GITHUB_TOKEN is not set")
     if not settings.GITHUB_ORG and not settings.GITHUB_REPO:
-        issues.append("Set GITHUB_ORG or GITHUB_REPO to match where runners are registered")
+        issues.append(
+            "Set GITHUB_ORG or GITHUB_REPO to match where runners are registered"
+        )
     if settings.GITHUB_ORG and settings.GITHUB_REPO:
         issues.append(
             "Both GITHUB_ORG and GITHUB_REPO are set; org scope wins. "

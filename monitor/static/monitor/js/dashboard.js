@@ -2,7 +2,6 @@ function dashboardChrome() {
   return {
     dark: localStorage.getItem("theme") === "dark",
     logModalOpen: false,
-    menuOpen: false,
     init() {
       this.$watch("dark", (value) => {
         localStorage.setItem("theme", value ? "dark" : "light");
@@ -34,7 +33,6 @@ function dashboardChrome() {
         target: "#host-chart",
         swap: "outerHTML",
       });
-      this.menuOpen = false;
     },
   };
 }

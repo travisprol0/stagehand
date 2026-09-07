@@ -5,54 +5,42 @@
   hx-swap="outerHTML"
 >
   {% if chart %}
-    <div class="space-y-6">
-      <div>
-        <div class="mb-2 flex items-center justify-between text-sm">
-          <span class="font-medium text-blue-600 dark:text-blue-400">CPU %</span>
-          <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
-        </div>
-        <svg
-          viewBox="0 0 400 100"
-          class="h-28 w-full text-blue-600 dark:text-blue-400"
-          role="img"
-          aria-label="Host CPU usage over the last hour"
-        >
-          <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
-          <polyline
-            points="{{ chart.cpu_polyline }}"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
-        </svg>
+    <div>
+      <div class="mb-2 flex items-center justify-between text-sm">
+        <span class="font-medium text-slate-700 dark:text-slate-200">CPU and memory</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
       </div>
-
-      <div>
-        <div class="mb-2 flex items-center justify-between text-sm">
-          <span class="font-medium text-emerald-600 dark:text-emerald-400">Memory %</span>
-          <span class="text-xs text-slate-500 dark:text-slate-400">Last hour</span>
-        </div>
-        <svg
-          viewBox="0 0 400 100"
-          class="h-28 w-full text-emerald-600 dark:text-emerald-400"
-          role="img"
-          aria-label="Host memory usage over the last hour"
-        >
-          <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
-          <polyline
-            points="{{ chart.memory_polyline }}"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
-        </svg>
-      </div>
-
-      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+      <svg
+        viewBox="0 0 400 100"
+        class="h-36 w-full"
+        role="img"
+        aria-label="Host CPU and memory usage over the last hour"
+      >
+        <line x1="8" y1="92" x2="392" y2="92" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="1" />
+        {% if chart.cpu_area %}
+          <polygon points="{{ chart.cpu_area }}" class="fill-blue-600/15 dark:fill-blue-400/20" />
+        {% endif %}
+        {% if chart.memory_area %}
+          <polygon points="{{ chart.memory_area }}" class="fill-emerald-600/15 dark:fill-emerald-400/20" />
+        {% endif %}
+        <polyline
+          points="{{ chart.cpu_polyline }}"
+          fill="none"
+          class="stroke-blue-600 dark:stroke-blue-400"
+          stroke-width="2"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+        <polyline
+          points="{{ chart.memory_polyline }}"
+          fill="none"
+          class="stroke-emerald-600 dark:stroke-emerald-400"
+          stroke-width="2"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+      </svg>
+      <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span>{{ chart.start_label }}</span>
         <span class="inline-flex items-center gap-3">
           <span class="inline-flex items-center gap-1">

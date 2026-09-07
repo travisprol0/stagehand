@@ -23,6 +23,14 @@ class HostAdmin(admin.ModelAdmin):
         "load_avg_1",
         "load_avg_5",
         "load_avg_15",
+        "boot_time",
+        "disk_percent",
+        "disk_used_bytes",
+        "disk_total_bytes",
+        "net_bytes_sent",
+        "net_bytes_recv",
+        "net_sent_bps",
+        "net_recv_bps",
         "updated_at",
     )
 
@@ -88,6 +96,7 @@ class MetricSnapshotAdmin(admin.ModelAdmin):
         "container",
         "cpu_percent",
         "memory_percent",
+        "disk_percent",
     )
     list_filter = ("subject_type", "host")
     readonly_fields = (
@@ -98,6 +107,9 @@ class MetricSnapshotAdmin(admin.ModelAdmin):
         "cpu_percent",
         "memory_percent",
         "memory_bytes",
+        "disk_percent",
+        "net_sent_bps",
+        "net_recv_bps",
     )
 
     def has_add_permission(self, request):

@@ -1,5 +1,7 @@
 import logging
 import socket
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 import psutil
 from django.conf import settings
@@ -19,6 +21,69 @@ def _read_load_averages() -> tuple[float | None, float | None, float | None]:
         return None, None, None
 
 
+def _read_boot_time():
+    try:
+        return datetime.fromtimestamp(psutil.boot_time(), tz=dt_timezone.utc)
+    except (AttributeError, OSError, OverflowError, ValueError):
+        return None
+
+
+def _read_disk_usage() -> tuple[float | None, int | None, int | None]:
+    try:
+        disk = psutil.disk_usage("/")
+        return disk.percent, int(disk.used), int(disk.total)
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None, None, None
+
+
+def _read_network_totals() -> tuple[int | None, int | None]:
+    try:
+        pernic = psutil.net_io_counters(pernic=True)
+    except (AttributeError, OSError, TypeError):
+        return None, None
+    if not isinstance(pernic, dict):
+        return None, None
+
+    sent = 0
+    recv = 0
+    found = False
+    for name, stats in pernic.items():
+        if str(name).startswith("lo"):
+            continue
+        try:
+            sent += int(stats.bytes_sent)
+            recv += int(stats.bytes_recv)
+        except (AttributeError, TypeError, ValueError):
+            continue
+        found = True
+    if not found:
+        return None, None
+    return sent, recv
+
+
+def _network_rates(
+    host: Host,
+    *,
+    sent: int | None,
+    recv: int | None,
+    now,
+) -> tuple[float | None, float | None]:
+    if (
+        sent is None
+        or recv is None
+        or host.net_bytes_sent is None
+        or host.net_bytes_recv is None
+        or host.updated_at is None
+    ):
+        return None, None
+    elapsed = (now - host.updated_at).total_seconds()
+    if elapsed <= 0:
+        return None, None
+    sent_bps = max(0.0, (sent - host.net_bytes_sent) / elapsed)
+    recv_bps = max(0.0, (recv - host.net_bytes_recv) / elapsed)
+    return sent_bps, recv_bps
+
+
 class HostMetricsCollector(BaseCollector):
     name = "host"
 
@@ -32,6 +97,16 @@ class HostMetricsCollector(BaseCollector):
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
         load_1, load_5, load_15 = _read_load_averages()
+        boot_time = _read_boot_time()
+        disk_percent, disk_used, disk_total = _read_disk_usage()
+        net_sent, net_recv = _read_network_totals()
+        now = timezone.now()
+        net_sent_bps, net_recv_bps = _network_rates(
+            host,
+            sent=net_sent,
+            recv=net_recv,
+            now=now,
+        )
 
         Host.objects.filter(pk=host.pk).update(
             hostname=hostname,
@@ -42,15 +117,27 @@ class HostMetricsCollector(BaseCollector):
             load_avg_1=load_1,
             load_avg_5=load_5,
             load_avg_15=load_15,
+            boot_time=boot_time,
+            disk_percent=disk_percent,
+            disk_used_bytes=disk_used,
+            disk_total_bytes=disk_total,
+            net_bytes_sent=net_sent,
+            net_bytes_recv=net_recv,
+            net_sent_bps=net_sent_bps,
+            net_recv_bps=net_recv_bps,
+            updated_at=now,
         )
 
         MetricSnapshot.objects.create(
-            recorded_at=timezone.now(),
+            recorded_at=now,
             subject_type=MetricSubject.HOST,
             host=host,
             cpu_percent=cpu_percent,
             memory_percent=memory.percent,
             memory_bytes=memory.used,
+            disk_percent=disk_percent,
+            net_sent_bps=net_sent_bps,
+            net_recv_bps=net_recv_bps,
         )
 
         if created:

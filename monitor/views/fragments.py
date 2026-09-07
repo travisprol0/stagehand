@@ -11,6 +11,8 @@ from monitor.services.dashboard import (
     get_current_host,
     get_host_containers,
     get_host_runners,
+    summarize_containers,
+    summarize_runners,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,12 @@ def host_summary(request):
     return render(
         request,
         "monitor/fragments/host_summary.html",
-        {"host": host, **_poll_context()},
+        {
+            "host": host,
+            "container_stats": summarize_containers(host),
+            "runner_stats": summarize_runners(host),
+            **_poll_context(),
+        },
     )
 
 
@@ -57,7 +64,11 @@ def containers(request):
     return render(
         request,
         "monitor/fragments/container_table.html",
-        {"containers": container_rows, **_poll_context()},
+        {
+            "containers": container_rows,
+            "container_stats": summarize_containers(host),
+            **_poll_context(),
+        },
     )
 
 
@@ -88,7 +99,11 @@ def runners(request):
     return render(
         request,
         "monitor/fragments/runner_list.html",
-        {"runners": runner_rows, **_poll_context()},
+        {
+            "runners": runner_rows,
+            "runner_stats": summarize_runners(host),
+            **_poll_context(),
+        },
     )
 
 

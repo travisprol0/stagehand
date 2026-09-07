@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.utils import timezone
 
 from monitor.collectors.host import HostMetricsCollector
 from monitor.models import Host, MetricSnapshot, MetricSubject
@@ -16,6 +17,16 @@ def psutil_mocks():
             total=16_000_000_000,
         )
         mock_psutil.getloadavg.return_value = (1.2, 0.9, 0.7)
+        mock_psutil.boot_time.return_value = 1_700_000_000.0
+        mock_psutil.disk_usage.return_value = MagicMock(
+            percent=40.0,
+            used=100_000_000_000,
+            total=250_000_000_000,
+        )
+        mock_psutil.net_io_counters.return_value = {
+            "lo": MagicMock(bytes_sent=999, bytes_recv=999),
+            "eth0": MagicMock(bytes_sent=1_000_000, bytes_recv=2_000_000),
+        }
         yield mock_psutil
 
 
@@ -47,6 +58,47 @@ def test_collect_updates_denormalized_host_fields(psutil_mocks):
     assert host.load_avg_1 == 1.2
     assert host.load_avg_5 == 0.9
     assert host.load_avg_15 == 0.7
+    assert host.disk_percent == 40.0
+    assert host.disk_used_bytes == 100_000_000_000
+    assert host.disk_total_bytes == 250_000_000_000
+    assert host.boot_time is not None
+    assert host.net_bytes_sent == 1_000_000
+    assert host.net_bytes_recv == 2_000_000
+    assert host.net_sent_bps is None
+    assert host.net_recv_bps is None
+
+
+@pytest.mark.django_db
+def test_second_collect_computes_network_rates(psutil_mocks):
+    with patch("monitor.collectors.host.socket.gethostname", return_value="test-host"):
+        HostMetricsCollector().collect()
+
+    host = Host.objects.get(name="talos")
+    Host.objects.filter(pk=host.pk).update(
+        updated_at=timezone.now() - timezone.timedelta(seconds=10),
+    )
+    psutil_mocks.net_io_counters.return_value = {
+        "lo": MagicMock(bytes_sent=999, bytes_recv=999),
+        "eth0": MagicMock(bytes_sent=1_500_000, bytes_recv=2_200_000),
+    }
+
+    with patch("monitor.collectors.host.socket.gethostname", return_value="test-host"):
+        HostMetricsCollector().collect()
+
+    host.refresh_from_db()
+    assert host.net_sent_bps == pytest.approx(50_000, rel=0.2)
+    assert host.net_recv_bps == pytest.approx(20_000, rel=0.2)
+    snapshot = (
+        MetricSnapshot.objects.filter(
+            host=host,
+            subject_type=MetricSubject.HOST,
+        )
+        .order_by("-recorded_at")
+        .first()
+    )
+    assert snapshot.disk_percent == 40.0
+    assert snapshot.net_sent_bps == pytest.approx(host.net_sent_bps)
+    assert snapshot.net_recv_bps == pytest.approx(host.net_recv_bps)
 
 
 @pytest.mark.django_db

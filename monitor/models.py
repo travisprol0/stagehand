@@ -15,6 +15,14 @@ class Host(models.Model):
     load_avg_1 = models.FloatField(null=True, blank=True)
     load_avg_5 = models.FloatField(null=True, blank=True)
     load_avg_15 = models.FloatField(null=True, blank=True)
+    boot_time = models.DateTimeField(null=True, blank=True)
+    disk_percent = models.FloatField(null=True, blank=True)
+    disk_used_bytes = models.BigIntegerField(null=True, blank=True)
+    disk_total_bytes = models.BigIntegerField(null=True, blank=True)
+    net_bytes_sent = models.BigIntegerField(null=True, blank=True)
+    net_bytes_recv = models.BigIntegerField(null=True, blank=True)
+    net_sent_bps = models.FloatField(null=True, blank=True)
+    net_recv_bps = models.FloatField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -114,6 +122,9 @@ class MetricSnapshot(models.Model):
     cpu_percent = models.FloatField(null=True, blank=True)
     memory_percent = models.FloatField(null=True, blank=True)
     memory_bytes = models.BigIntegerField(null=True, blank=True)
+    disk_percent = models.FloatField(null=True, blank=True)
+    net_sent_bps = models.FloatField(null=True, blank=True)
+    net_recv_bps = models.FloatField(null=True, blank=True)
 
     objects = MetricSnapshotQuerySet.as_manager()
 
