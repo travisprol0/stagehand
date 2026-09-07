@@ -71,6 +71,26 @@ def test_dashboard_loads_htmx_and_alpine_cdn(client, host):
 
 
 @pytest.mark.django_db
+def test_dashboard_refresh_listens_on_body(client, host, host_snapshots):
+    content = client.get("/").content.decode()
+
+    assert 'hx-trigger="every ' in content
+    assert "refresh from:body" in content
+    assert content.count("refresh from:body") >= 4
+
+
+def test_refresh_all_triggers_htmx_body_event():
+    from pathlib import Path
+
+    js = (Path(__file__).resolve().parents[1] / "static/monitor/js/dashboard.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'htmx.trigger(document.body, "refresh")' in js
+    assert "htmx.ajax" not in js
+
+
+@pytest.mark.django_db
 def test_polled_fragments_do_not_use_load_trigger(client, host, host_snapshots):
     """load on swapped outerHTML re-fires every swap and causes a request storm."""
     urls = (
@@ -84,3 +104,4 @@ def test_polled_fragments_do_not_use_load_trigger(client, host, host_snapshots):
         content = client.get(url).content.decode()
         assert 'hx-trigger="load' not in content
         assert "every " in content and "s" in content
+        assert "refresh from:body" in content

@@ -17,22 +17,7 @@ function dashboardChrome() {
       this.logModalOpen = false;
     },
     refreshAll() {
-      htmx.ajax("GET", "/fragments/host-summary/", {
-        target: "#host-summary",
-        swap: "outerHTML",
-      });
-      htmx.ajax("GET", "/fragments/containers/", {
-        target: "#container-table",
-        swap: "outerHTML",
-      });
-      htmx.ajax("GET", "/fragments/runners/", {
-        target: "#runner-list",
-        swap: "outerHTML",
-      });
-      htmx.ajax("GET", "/fragments/charts/host/", {
-        target: "#host-chart",
-        swap: "outerHTML",
-      });
+      htmx.trigger(document.body, "refresh");
     },
   };
 }

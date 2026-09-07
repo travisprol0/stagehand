@@ -1,7 +1,7 @@
 <div
   id="runner-list"
   hx-get="/fragments/runners/"
-  hx-trigger="every {{ poll_seconds }}s"
+  hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >
   <div class="mb-3 flex items-baseline justify-between gap-3">
