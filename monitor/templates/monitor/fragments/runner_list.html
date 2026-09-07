@@ -1,3 +1,4 @@
+{% load monitor_extras %}
 <div
   id="runner-list"
   hx-get="/fragments/runners/"
@@ -45,7 +46,38 @@
               <p class="mt-2 text-xs text-slate-500 dark:text-zinc-400">{{ runner.labels|join:", " }}</p>
             {% endif %}
             {% if runner.busy %}
-              <p class="mt-2 text-xs font-medium text-sky-600 dark:text-sky-400">Busy</p>
+              {% if runner.current_workflow_name or runner.current_job_name %}
+                <div class="mt-2 space-y-0.5 text-xs">
+                  {% if runner.current_html_url %}
+                    <a
+                      href="{{ runner.current_html_url }}"
+                      class="font-medium text-sky-600 hover:underline dark:text-sky-400"
+                      target="_blank"
+                      rel="noreferrer"
+                    >{{ runner.current_workflow_name|default:runner.current_job_name }}</a>
+                  {% else %}
+                    <p class="font-medium text-sky-600 dark:text-sky-400">
+                      {{ runner.current_workflow_name|default:runner.current_job_name }}
+                    </p>
+                  {% endif %}
+                  <p class="text-slate-500 dark:text-zinc-400">
+                    {% if runner.current_job_name and runner.current_workflow_name %}
+                      {{ runner.current_job_name }}
+                      {% if runner.current_repository %} · {{ runner.current_repository }}{% endif %}
+                    {% elif runner.current_repository %}
+                      {{ runner.current_repository }}
+                    {% endif %}
+                    {% if runner.current_head_branch %}
+                      · {{ runner.current_head_branch }}
+                    {% endif %}
+                    {% if runner.current_started_at %}
+                      · {{ runner.current_started_at|duration_short }}
+                    {% endif %}
+                  </p>
+                </div>
+              {% else %}
+                <p class="mt-2 text-xs font-medium text-sky-600 dark:text-sky-400">Busy</p>
+              {% endif %}
             {% endif %}
           </div>
         </article>

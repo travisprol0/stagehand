@@ -10,6 +10,7 @@ class HostAdmin(admin.ModelAdmin):
         "hostname",
         "cpu_percent",
         "memory_percent",
+        "cpu_count",
         "updated_at",
     )
     search_fields = ("name", "hostname")
@@ -61,6 +62,11 @@ class DockerContainerAdmin(admin.ModelAdmin):
         "cpu_percent",
         "memory_bytes",
         "started_at",
+        "restart_count",
+        "exit_code",
+        "compose_project",
+        "ports",
+        "state_error",
         "updated_at",
     )
 
@@ -70,7 +76,7 @@ class DockerContainerAdmin(admin.ModelAdmin):
 
 @admin.register(GitHubRunner)
 class GitHubRunnerAdmin(admin.ModelAdmin):
-    list_display = ("name", "host", "status", "busy", "updated_at")
+    list_display = ("name", "host", "status", "busy", "current_job_name", "updated_at")
     list_filter = ("status", "busy", "host")
     search_fields = ("name",)
     readonly_fields = (
@@ -80,6 +86,12 @@ class GitHubRunnerAdmin(admin.ModelAdmin):
         "labels",
         "status",
         "busy",
+        "current_job_name",
+        "current_workflow_name",
+        "current_repository",
+        "current_html_url",
+        "current_started_at",
+        "current_head_branch",
         "updated_at",
     )
 

@@ -7,7 +7,10 @@
   <div class="mb-3 flex items-baseline justify-between gap-3">
     <h2 id="containers-heading" class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Containers</h2>
     {% if container_stats %}
-      <p class="text-xs text-slate-500 dark:text-zinc-400">{{ container_stats.running }} running</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-400">
+        {{ container_stats.running }} running · {{ container_stats.total }} total
+        {% if container_stats.unhealthy %} · {{ container_stats.unhealthy }} unhealthy{% endif %}
+      </p>
     {% endif %}
   </div>
   {% if containers %}

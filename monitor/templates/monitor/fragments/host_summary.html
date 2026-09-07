@@ -3,7 +3,7 @@
   id="host-summary"
   class="space-y-4"
   hx-get="/fragments/host-summary/"
-      hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+  hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >
   <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-zinc-400">
@@ -15,12 +15,29 @@
     {% if host.boot_time %}
       <span>up {{ host.boot_time|duration_short }}</span>
     {% endif %}
+    {% if host.cpu_count %}
+      <span class="font-mono tabular-nums">{{ host.cpu_count }} CPU</span>
+    {% endif %}
     {% if host.load_avg_1 is not None %}
       <span class="font-mono tabular-nums">
         load {{ host.load_avg_1|floatformat:2 }} / {{ host.load_avg_5|floatformat:2 }} / {{ host.load_avg_15|floatformat:2 }}
       </span>
     {% endif %}
+    <span>poll {{ poll_seconds }}s</span>
   </div>
+
+  {% if attention %}
+    <ul class="space-y-1.5">
+      {% for item in attention %}
+        <li
+          class="rounded-md px-3 py-1.5 text-xs
+                 {% if item.level == 'error' %}bg-red-50 text-red-800 dark:bg-red-950/50 dark:text-red-200
+                 {% elif item.level == 'warn' %}bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200
+                 {% else %}bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200{% endif %}"
+        >{{ item.text }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
   <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
     <article class="overflow-hidden rounded-lg border border-sky-200/80 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/40">
@@ -28,7 +45,13 @@
       <div class="p-3.5">
         <p class="text-[0.65rem] font-medium uppercase tracking-wider text-sky-700 dark:text-sky-300">CPU</p>
         <p class="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight">{{ host.cpu_percent|floatformat:1 }}%</p>
-        <div class="mt-3">{% include "monitor/fragments/progress_bar.html" with value=host.cpu_percent only %}</div>
+        {% if host.load_avg_1 is not None %}
+          <p class="mt-1 font-mono text-[0.7rem] text-slate-500 dark:text-zinc-400">
+            load {{ host.load_avg_1|floatformat:2 }}
+            {% if host.cpu_count %} · {{ host.cpu_count }} thr{% endif %}
+          </p>
+        {% endif %}
+        <div class="mt-2">{% include "monitor/fragments/progress_bar.html" with value=host.cpu_percent only %}</div>
       </div>
     </article>
 
@@ -41,6 +64,9 @@
           {% if host.memory_used_bytes is not None %}{{ host.memory_used_bytes|filesizeformat }}{% else %}—{% endif %}
           /
           {% if host.memory_total_bytes is not None %}{{ host.memory_total_bytes|filesizeformat }}{% else %}—{% endif %}
+          {% if host.memory_used_bytes is not None and host.memory_total_bytes is not None %}
+            · {{ host.memory_used_bytes|remaining_bytes:host.memory_total_bytes|filesizeformat }} free
+          {% endif %}
         </p>
         <div class="mt-2">{% include "monitor/fragments/progress_bar.html" with value=host.memory_percent only %}</div>
       </div>
@@ -57,6 +83,9 @@
           {% if host.disk_used_bytes is not None %}{{ host.disk_used_bytes|filesizeformat }}{% else %}—{% endif %}
           /
           {% if host.disk_total_bytes is not None %}{{ host.disk_total_bytes|filesizeformat }}{% else %}—{% endif %}
+          {% if host.disk_used_bytes is not None and host.disk_total_bytes is not None %}
+            · {{ host.disk_used_bytes|remaining_bytes:host.disk_total_bytes|filesizeformat }} free
+          {% endif %}
         </p>
         <div class="mt-2">{% include "monitor/fragments/progress_bar.html" with value=host.disk_percent only %}</div>
       </div>
@@ -77,7 +106,10 @@
         <p class="text-[0.65rem] font-medium uppercase tracking-wider text-emerald-800 dark:text-emerald-300">Containers</p>
         <p class="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight">{{ container_stats.running }}</p>
         <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-zinc-400">
-          running
+          running · {{ container_stats.total }} total
+          {% if container_stats.exited %}
+            · {{ container_stats.exited }} exited
+          {% endif %}
           {% if container_stats.unhealthy %}
             · {{ container_stats.unhealthy }} unhealthy
           {% endif %}
@@ -92,6 +124,9 @@
         <p class="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight">{{ runner_stats.idle }}</p>
         <p class="mt-1 text-[0.7rem] text-slate-500 dark:text-zinc-400">
           idle · {{ runner_stats.active }} active · {{ runner_stats.offline }} offline
+          {% if runner_stats.busy %}
+            · {{ runner_stats.busy }} busy
+          {% endif %}
         </p>
       </div>
     </article>

@@ -3,6 +3,7 @@ from django.shortcuts import render
 
 from monitor.services.charts import get_host_chart_data
 from monitor.services.dashboard import (
+    attention_items,
     get_current_host,
     get_host_containers,
     get_host_runners,
@@ -28,5 +29,6 @@ def index(request):
             "runner_stats": summarize_runners(host) if host else None,
             "poll_seconds": poll_seconds,
             "chart": get_host_chart_data(host) if host else None,
+            "attention": attention_items(host) if host else [],
         },
     )

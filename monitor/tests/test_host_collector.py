@@ -38,6 +38,7 @@ def test_collect_updates_denormalized_host_fields(psutil_mocks):
     assert host.disk_percent == 40.0
     assert host.disk_used_bytes == 100_000_000_000
     assert host.disk_total_bytes == 250_000_000_000
+    assert host.cpu_count == 8
     assert host.boot_time is not None
     assert host.net_bytes_sent == 1_000_000
     assert host.net_bytes_recv == 2_000_000

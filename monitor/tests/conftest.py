@@ -19,6 +19,7 @@ from monitor.models import (
 def psutil_mocks():
     with patch("monitor.collectors.host.psutil") as mock_psutil:
         mock_psutil.cpu_percent.return_value = 42.0
+        mock_psutil.cpu_count.return_value = 8
         mock_psutil.virtual_memory.return_value = MagicMock(
             percent=61.0,
             used=8_000_000_000,

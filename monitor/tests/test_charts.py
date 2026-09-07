@@ -22,10 +22,11 @@ def test_host_chart_fragment_renders_polylines(client, host, host_snapshots):
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert content.count("<polyline") == 2
+    assert content.count("<polyline") == 3
     assert content.count("<svg") == 1
     assert "CPU" in content
     assert "Memory" in content
+    assert "Disk" in content
 
 
 @pytest.mark.django_db

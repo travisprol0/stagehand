@@ -20,12 +20,21 @@ def _make_container(
     container.id = container_id
     container.name = f"/{name}"
     container.attrs = {
+        "RestartCount": 2,
         "State": {
             "Status": status,
             "Health": {"Status": health},
             "StartedAt": started_at,
+            "ExitCode": 0,
+            "Error": "",
         },
-        "Config": {"Image": image},
+        "Config": {
+            "Image": image,
+            "Labels": {"com.docker.compose.project": "stagehand"},
+        },
+        "NetworkSettings": {
+            "Ports": {"8000/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8000"}]},
+        },
     }
     container.stats.return_value = {
         "memory_stats": {"usage": 128_000_000, "limit": 256_000_000},
@@ -64,6 +73,9 @@ def test_collect_upserts_docker_container(host):
     assert row.health == "healthy"
     assert row.memory_bytes == 128_000_000
     assert row.cpu_percent is not None
+    assert row.restart_count == 2
+    assert row.compose_project == "stagehand"
+    assert "8000" in row.ports
 
 
 @pytest.mark.django_db

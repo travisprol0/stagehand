@@ -28,6 +28,19 @@ def test_host_summary_fragment(client, host):
 
 
 @pytest.mark.django_db
+def test_host_summary_attention_includes_busy_job(client, host, runner):
+    runner.busy = True
+    runner.status = "active"
+    runner.current_workflow_name = "NUC Nightly Maintenance"
+    runner.save()
+
+    content = client.get("/fragments/host-summary/").content.decode()
+
+    assert "NUC Nightly Maintenance" in content
+    assert "talos-runner-1" in content
+
+
+@pytest.mark.django_db
 def test_containers_fragment(client, host, container):
     response = client.get("/fragments/containers/")
 
@@ -46,6 +59,26 @@ def test_runners_fragment(client, host, runner):
     content = response.content.decode()
     assert "talos-runner-1" in content
     assert "idle" in content
+
+
+@pytest.mark.django_db
+def test_runners_fragment_shows_current_job(client, host, runner):
+    runner.busy = True
+    runner.status = "active"
+    runner.current_job_name = "cleanup"
+    runner.current_workflow_name = "NUC Nightly Maintenance"
+    runner.current_repository = "travisprol0/lattice-log"
+    runner.current_html_url = (
+        "https://github.com/travisprol0/lattice-log/actions/runs/1/job/2"
+    )
+    runner.save()
+
+    content = client.get("/fragments/runners/").content.decode()
+
+    assert "NUC Nightly Maintenance" in content
+    assert "cleanup" in content
+    assert "lattice-log" in content
+    assert "actions/runs/1/job/2" in content
 
 
 @pytest.mark.django_db

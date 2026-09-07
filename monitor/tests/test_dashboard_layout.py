@@ -84,3 +84,5 @@ def test_dashboard_formats_memory_and_container_uptime(client, host, container):
 
     assert "MB" in content or "GB" in content
     assert "up " in content
+    assert "free" in content
+    assert "poll " in content

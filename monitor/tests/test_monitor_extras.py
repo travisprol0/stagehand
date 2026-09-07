@@ -7,6 +7,7 @@ from monitor.templatetags.monitor_extras import (
     bitrate,
     duration_short,
     relative_age,
+    remaining_bytes,
 )
 
 
@@ -32,3 +33,8 @@ def test_bitrate_formats_units():
     assert bitrate(800) == "800 B/s"
     assert "KB/s" in bitrate(80_000)
     assert "MB/s" in bitrate(1_200_000)
+
+
+def test_remaining_bytes():
+    assert remaining_bytes(10, 40) == 30
+    assert remaining_bytes(None, 40) is None

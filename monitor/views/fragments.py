@@ -8,6 +8,7 @@ from docker.errors import DockerException
 from monitor.models import DockerContainer
 from monitor.services.charts import get_host_chart_data
 from monitor.services.dashboard import (
+    attention_items,
     get_current_host,
     get_host_containers,
     get_host_runners,
@@ -42,6 +43,7 @@ def host_summary(request):
             "host": host,
             "container_stats": summarize_containers(host),
             "runner_stats": summarize_runners(host),
+            "attention": attention_items(host),
             **_poll_context(),
         },
     )

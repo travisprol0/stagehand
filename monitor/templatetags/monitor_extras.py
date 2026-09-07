@@ -82,3 +82,12 @@ def bitrate(bps) -> str:
     if value >= 100 or unit == "B/s":
         return f"{value:.0f} {unit}"
     return f"{value:.1f} {unit}"
+
+
+@register.filter
+def remaining_bytes(used, total):
+    try:
+        free = int(total) - int(used)
+    except (TypeError, ValueError):
+        return None
+    return max(0, free)

@@ -29,6 +29,53 @@ def _container_health(attrs: dict) -> str:
     return health.get("Status") or "none"
 
 
+def _compose_project(attrs: dict) -> str:
+    labels = attrs.get("Config", {}).get("Labels") or {}
+    if not isinstance(labels, dict):
+        return ""
+    return str(labels.get("com.docker.compose.project") or "")
+
+
+def _ports_summary(attrs: dict) -> str:
+    ports = attrs.get("NetworkSettings", {}).get("Ports") or {}
+    if not isinstance(ports, dict):
+        return ""
+    bits: list[str] = []
+    for container_port, bindings in ports.items():
+        if not bindings:
+            bits.append(str(container_port))
+            continue
+        for binding in bindings:
+            if not isinstance(binding, dict):
+                continue
+            host_port = binding.get("HostPort")
+            if host_port:
+                bits.append(f"{host_port}->{container_port}")
+            else:
+                bits.append(str(container_port))
+        if len(bits) >= 6:
+            break
+    return ", ".join(bits[:6])
+
+
+def _restart_count(attrs: dict) -> int:
+    try:
+        return int(attrs.get("RestartCount") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _exit_code(state: dict) -> int | None:
+    try:
+        return int(state.get("ExitCode"))
+    except (TypeError, ValueError):
+        return None
+
+
+def _state_error(state: dict) -> str:
+    return str(state.get("Error") or "")[:255]
+
+
 def _cpu_percent_from_stats(stats: dict) -> float | None:
     """Instantaneous CPU % from one stats(stream=False) sample (Docker API)."""
     try:
@@ -112,6 +159,11 @@ class DockerCollector(BaseCollector):
                     "cpu_percent": cpu_percent,
                     "memory_bytes": memory_bytes,
                     "started_at": started_at,
+                    "restart_count": _restart_count(attrs),
+                    "exit_code": _exit_code(state),
+                    "compose_project": _compose_project(attrs),
+                    "ports": _ports_summary(attrs),
+                    "state_error": _state_error(state),
                 },
             )
 

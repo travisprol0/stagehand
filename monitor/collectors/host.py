@@ -30,7 +30,7 @@ def _read_boot_time():
 
 
 def _disk_path() -> str:
-    """Prefer a bind-mounted host root so Compose collectors don't report the overlay."""
+    """Prefer bind-mounted host root over the Compose overlay filesystem."""
     override = os.environ.get("HOST_FS_ROOT", "").strip()
     candidates = [override, "/host", "/"] if override else ["/host", "/"]
     for path in candidates:
@@ -103,6 +103,16 @@ def _network_rates(
     return sent_bps, recv_bps
 
 
+def _cpu_count() -> int | None:
+    try:
+        count = psutil.cpu_count()
+    except (AttributeError, OSError):
+        return None
+    if count is None:
+        return None
+    return int(count)
+
+
 class HostMetricsCollector(BaseCollector):
     name = "host"
 
@@ -114,6 +124,7 @@ class HostMetricsCollector(BaseCollector):
         )
 
         cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = _cpu_count()
         memory = psutil.virtual_memory()
         load_1, load_5, load_15 = _read_load_averages()
         boot_time = _read_boot_time()
@@ -144,6 +155,7 @@ class HostMetricsCollector(BaseCollector):
             net_bytes_recv=net_recv,
             net_sent_bps=net_sent_bps,
             net_recv_bps=net_recv_bps,
+            cpu_count=cpu_count,
             updated_at=now,
         )
 

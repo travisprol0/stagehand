@@ -2,8 +2,17 @@
 <tr id="container-row-{{ container.pk }}" class="hover:bg-slate-50/80 dark:hover:bg-zinc-800/40">
   <td class="px-3 py-2 text-sm font-medium">
     <div>{{ container.name }}</div>
+    {% if container.compose_project %}
+      <div class="mt-0.5 text-[0.7rem] font-normal text-slate-500 dark:text-zinc-400">{{ container.compose_project }}</div>
+    {% endif %}
+    {% if container.ports %}
+      <div class="mt-0.5 font-mono text-[0.7rem] font-normal text-slate-500 dark:text-zinc-400">{{ container.ports }}</div>
+    {% endif %}
     {% if container.started_at %}
       <div class="mt-0.5 font-mono text-[0.7rem] font-normal text-slate-500 dark:text-zinc-400">up {{ container.started_at|duration_short }}</div>
+    {% endif %}
+    {% if container.state_error %}
+      <div class="mt-0.5 text-[0.7rem] font-normal text-red-600 dark:text-red-400">{{ container.state_error }}</div>
     {% endif %}
   </td>
   <td class="max-w-[12rem] px-3 py-2 font-mono text-xs text-slate-600 dark:text-zinc-300">
@@ -25,6 +34,12 @@
         <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
         {{ container.status }}
       </span>
+    {% endif %}
+    {% if container.restart_count %}
+      <div class="mt-0.5 text-[0.7rem] text-slate-500 dark:text-zinc-400">{{ container.restart_count }} restarts</div>
+    {% endif %}
+    {% if container.status == "exited" and container.exit_code is not None %}
+      <div class="mt-0.5 font-mono text-[0.7rem] text-slate-500 dark:text-zinc-400">exit {{ container.exit_code }}</div>
     {% endif %}
   </td>
   <td class="px-3 py-2 text-sm">

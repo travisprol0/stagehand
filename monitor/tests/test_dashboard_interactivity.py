@@ -82,9 +82,8 @@ def test_dashboard_refresh_listens_on_body(client, host, host_snapshots):
 def test_refresh_all_triggers_htmx_body_event():
     from pathlib import Path
 
-    js = (Path(__file__).resolve().parents[1] / "static/monitor/js/dashboard.js").read_text(
-        encoding="utf-8"
-    )
+    js_path = Path(__file__).resolve().parents[1] / "static/monitor/js/dashboard.js"
+    js = js_path.read_text(encoding="utf-8")
 
     assert 'htmx.trigger(document.body, "refresh")' in js
     assert "htmx.ajax" not in js

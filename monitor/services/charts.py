@@ -17,8 +17,10 @@ CHART_PADDING = 8
 class HostChartData:
     cpu_polyline: str
     memory_polyline: str
+    disk_polyline: str
     cpu_area: str
     memory_area: str
+    disk_area: str
     time_labels: list[str]
     start_label: str
     end_label: str
@@ -92,13 +94,16 @@ def get_host_chart_data(host: Host, *, minutes: int = 60) -> HostChartData | Non
 
     cpu_values = [snapshot.cpu_percent or 0.0 for snapshot in snapshots]
     memory_values = [snapshot.memory_percent or 0.0 for snapshot in snapshots]
+    disk_values = [snapshot.disk_percent or 0.0 for snapshot in snapshots]
     time_labels = [snapshot.recorded_at.strftime("%H:%M") for snapshot in snapshots]
 
     return HostChartData(
         cpu_polyline=build_polyline(cpu_values),
         memory_polyline=build_polyline(memory_values),
+        disk_polyline=build_polyline(disk_values),
         cpu_area=build_area(cpu_values),
         memory_area=build_area(memory_values),
+        disk_area=build_area(disk_values),
         time_labels=time_labels,
         start_label=time_labels[0],
         end_label=time_labels[-1],

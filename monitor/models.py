@@ -23,6 +23,7 @@ class Host(models.Model):
     net_bytes_recv = models.BigIntegerField(null=True, blank=True)
     net_sent_bps = models.FloatField(null=True, blank=True)
     net_recv_bps = models.FloatField(null=True, blank=True)
+    cpu_count = models.IntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -42,6 +43,11 @@ class DockerContainer(models.Model):
     cpu_percent = models.FloatField(null=True, blank=True)
     memory_bytes = models.BigIntegerField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
+    restart_count = models.IntegerField(default=0)
+    exit_code = models.IntegerField(null=True, blank=True)
+    compose_project = models.CharField(max_length=255, blank=True)
+    ports = models.CharField(max_length=512, blank=True)
+    state_error = models.CharField(max_length=255, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -70,6 +76,12 @@ class GitHubRunner(models.Model):
     labels = models.JSONField(default=list)
     status = models.CharField(max_length=16, choices=RunnerStatus.choices)
     busy = models.BooleanField(default=False)
+    current_job_name = models.CharField(max_length=255, blank=True)
+    current_workflow_name = models.CharField(max_length=255, blank=True)
+    current_repository = models.CharField(max_length=255, blank=True)
+    current_html_url = models.URLField(max_length=512, blank=True)
+    current_started_at = models.DateTimeField(null=True, blank=True)
+    current_head_branch = models.CharField(max_length=255, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
