@@ -28,6 +28,7 @@ services:
       POSTGRES_PORT: "5432"
       DATABASE_URL: postgres://stagehand:stagehand@db:5432/stagehand
       DEBUG: "0"
+      ALLOWED_HOSTS: "*"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:

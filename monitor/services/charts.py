@@ -51,10 +51,7 @@ def build_polyline(
     coords: list[str] = []
 
     for index, raw_value in enumerate(values):
-        if len(values) == 1:
-            x = padding
-        else:
-            x = padding + (index / (len(values) - 1)) * plot_width
+        x = padding + (index / (len(values) - 1)) * plot_width
         value = 0.0 if raw_value is None else float(raw_value)
         clamped = max(0.0, min(value, value_max))
         y = padding + plot_height - (clamped / value_max) * plot_height

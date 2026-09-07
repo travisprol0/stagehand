@@ -1,7 +1,10 @@
-.PHONY: test lint setup migrate up down start
+.PHONY: test cov lint setup migrate up down start
 
 test:
 	./scripts/test.sh
+
+cov:
+	./scripts/test.sh --cov=monitor --cov-report=term-missing --cov-report=html
 
 lint:
 	.venv/bin/ruff check .

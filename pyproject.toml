@@ -13,3 +13,15 @@ select = ["E", "F", "I", "W"]
 DJANGO_SETTINGS_MODULE = "config.settings"
 pythonpath = ["."]
 testpaths = ["monitor/tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["monitor"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

@@ -83,7 +83,7 @@ Run the full stack on talos (PostgreSQL, Gunicorn web, metrics collector):
 
 ```bash
 cp .env.example .env
-# Set SECRET_KEY and ALLOWED_HOSTS=talos,localhost,127.0.0.1
+# Set SECRET_KEY. Compose sets ALLOWED_HOSTS=* so LAN IP access works.
 # Optional: GITHUB_TOKEN, GITHUB_ORG or GITHUB_REPO
 make up
 # or: docker compose up --build
@@ -117,7 +117,7 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 |----------|---------|-------------|
 | `SECRET_KEY` | — | Django secret key (required in production) |
 | `DEBUG` | `False` | Django debug mode (`True`/`1`/`yes` to enable) |
-| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated hostnames |
+| `ALLOWED_HOSTS` | `*` in Compose | Host header allowlist (`*` so LAN IP access works) |
 | `DATABASE_URL` | — | Optional Postgres URL (overrides `POSTGRES_*`) |
 | `POSTGRES_DB` | `stagehand` | Database name |
 | `POSTGRES_USER` | `stagehand` | Database user |
@@ -152,20 +152,23 @@ After changing `.env`, restart the collector (`docker compose restart collector`
 
 ## Running tests
 
-Install dev dependencies once:
+Install dev dependencies once (into the project venv):
 
 ```bash
-pip install -r requirements-dev.txt
-chmod +x scripts/test.sh
+.venv/bin/pip install -r requirements-dev.txt
 ```
 
 Run the full suite:
 
 ```bash
-make test          # ./scripts/test.sh → pytest -q
-pytest -q          # direct
-make lint          # ruff check + format --check
+make test          # .venv pytest
+make cov           # same + coverage; opens nothing — report is htmlcov/index.html
+make lint          # .venv ruff
 ```
+
+Coverage is local only (`pytest-cov`). Source is `monitor`, omitting tests and migrations. `make cov` writes a terminal summary and `htmlcov/index.html`.
+
+Do not run system `pytest` — it is not installed. Use `make test` / `make cov`, or `.venv/bin/pytest`.
 
 Unit tests mock Docker and GitHub — no real socket or token is required.
 
@@ -183,6 +186,7 @@ Django app `monitor` runs a `collect_metrics` management command (or Compose `co
 | `make setup` | `./scripts/setup.sh` — venv, deps, Postgres, migrate (no server) |
 | `make migrate` | `python manage.py migrate` |
 | `make test` | `./scripts/test.sh` |
+| `make cov` | coverage + `htmlcov/index.html` |
 | `make lint` | `ruff check .` and `ruff format --check .` |
 | `make up` | `docker compose up --build` |
 | `make down` | `docker compose down` |
