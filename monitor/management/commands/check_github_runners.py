@@ -72,14 +72,24 @@ class Command(BaseCommand):
     def _raise_http_error(self, exc: httpx.HTTPStatusError) -> None:
         status = exc.response.status_code
         hint = {
-            401: "Token is invalid or expired. Create a new PAT with repo (repo runners) "
-            "or admin:org (org runners) scope.",
-            403: "Token lacks permission for this endpoint. For repo runners use a PAT "
-            "with repo scope; for org runners use admin:org or a fine-grained token "
-            "with Organization administration / Actions read.",
-            404: "Org or repo not found, or token cannot access it. Check "
-            "GITHUB_ORG / GITHUB_REPO spelling.",
-        }.get(status, "See https://docs.github.com/en/rest/actions/self-hosted-runners")
+            401: (
+                "Token is invalid or expired. Create a new PAT with repo "
+                "(repo runners) or admin:org (org runners) scope."
+            ),
+            403: (
+                "Token lacks permission for this endpoint. For repo runners "
+                "use a PAT with repo scope; for org runners use admin:org or "
+                "a fine-grained token with Organization administration / "
+                "Actions read."
+            ),
+            404: (
+                "Org or repo not found, or token cannot access it. Check "
+                "GITHUB_ORG / GITHUB_REPO spelling."
+            ),
+        }.get(
+            status,
+            "See https://docs.github.com/en/rest/actions/self-hosted-runners",
+        )
 
         body = exc.response.text.strip()
         detail = f" ({body[:200]})" if body else ""
