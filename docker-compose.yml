@@ -52,6 +52,7 @@ services:
       POSTGRES_PORT: "5432"
       DATABASE_URL: postgres://stagehand:stagehand@db:5432/stagehand
       DEBUG: "0"
+      HOST_FS_ROOT: /host
     volumes:
       - /:/host:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro

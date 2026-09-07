@@ -32,9 +32,11 @@ def test_web_and_collector_mount_docker_socket_read_only(compose_config):
 
 
 def test_collector_mounts_host_root_read_only(compose_config):
-    volumes = compose_config["services"]["collector"].get("volumes", [])
+    collector = compose_config["services"]["collector"]
+    volumes = collector.get("volumes", [])
 
     assert "/:/host:ro" in volumes
+    assert collector.get("environment", {}).get("HOST_FS_ROOT") == "/host"
 
 
 def test_db_service_has_no_docker_socket_mount(compose_config):

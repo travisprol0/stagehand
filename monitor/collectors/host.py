@@ -35,7 +35,15 @@ def _disk_path() -> str:
     candidates = [override, "/host", "/"] if override else ["/host", "/"]
     for path in candidates:
         if path and os.path.isdir(path) and os.path.isdir(os.path.join(path, "etc")):
+            if override and path != override:
+                logger.warning(
+                    "HOST_FS_ROOT=%s is not usable; measuring disk at %s",
+                    override,
+                    path,
+                )
             return path
+    if override:
+        logger.warning("HOST_FS_ROOT=%s is not usable; measuring disk at /", override)
     return "/"
 
 
