@@ -53,6 +53,7 @@ services:
       DATABASE_URL: postgres://stagehand:stagehand@db:5432/stagehand
       DEBUG: "0"
     volumes:
+      - /:/host:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       db:

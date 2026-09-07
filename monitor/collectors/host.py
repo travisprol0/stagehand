@@ -1,4 +1,5 @@
 import logging
+import os
 import socket
 from datetime import datetime
 from datetime import timezone as dt_timezone
@@ -28,9 +29,19 @@ def _read_boot_time():
         return None
 
 
+def _disk_path() -> str:
+    """Prefer a bind-mounted host root so Compose collectors don't report the overlay."""
+    override = os.environ.get("HOST_FS_ROOT", "").strip()
+    candidates = [override, "/host", "/"] if override else ["/host", "/"]
+    for path in candidates:
+        if path and os.path.isdir(path) and os.path.isdir(os.path.join(path, "etc")):
+            return path
+    return "/"
+
+
 def _read_disk_usage() -> tuple[float | None, int | None, int | None]:
     try:
-        disk = psutil.disk_usage("/")
+        disk = psutil.disk_usage(_disk_path())
         return disk.percent, int(disk.used), int(disk.total)
     except (AttributeError, OSError, TypeError, ValueError):
         return None, None, None

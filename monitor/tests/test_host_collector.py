@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.utils import timezone
 
-from monitor.collectors.host import HostMetricsCollector
+from monitor.collectors.host import HostMetricsCollector, _disk_path, _read_disk_usage
 from monitor.models import Host, MetricSnapshot, MetricSubject
 
 
@@ -105,3 +105,22 @@ def test_collect_without_loadavg_support(psutil_mocks):
     assert host.load_avg_1 is None
     assert host.load_avg_5 is None
     assert host.load_avg_15 is None
+
+
+def test_disk_path_prefers_host_fs_root(tmp_path, monkeypatch):
+    host_root = tmp_path / "hostroot"
+    (host_root / "etc").mkdir(parents=True)
+    monkeypatch.setenv("HOST_FS_ROOT", str(host_root))
+
+    assert _disk_path() == str(host_root)
+
+
+def test_read_disk_usage_queries_host_bind_mount(tmp_path, monkeypatch):
+    host_root = tmp_path / "hostroot"
+    (host_root / "etc").mkdir(parents=True)
+    monkeypatch.setenv("HOST_FS_ROOT", str(host_root))
+
+    with patch("monitor.collectors.host.psutil.disk_usage") as usage:
+        usage.return_value = MagicMock(percent=12.5, used=3, total=24)
+        assert _read_disk_usage() == (12.5, 3, 24)
+        usage.assert_called_once_with(str(host_root))
