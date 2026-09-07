@@ -108,6 +108,17 @@ def test_cpu_percent_non_positive_system_delta_and_bad_stats():
     }
     assert _cpu_percent_from_stats(stats) is None
     assert _cpu_percent_from_stats({}) is None
+    without_online = {
+        "cpu_stats": {
+            "cpu_usage": {"total_usage": 2},
+            "system_cpu_usage": 20,
+        },
+        "precpu_stats": {
+            "cpu_usage": {"total_usage": 1},
+            "system_cpu_usage": 10,
+        },
+    }
+    assert _cpu_percent_from_stats(without_online) == pytest.approx(10.0)
 
 
 def test_memory_bytes_missing_stats():
@@ -123,6 +134,31 @@ def test_docker_list_containers_failure(host):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
             DockerCollector().collect()
     assert DockerContainer.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_docker_marks_absent_when_others_listed(host):
+    stale = DockerContainer.objects.create(
+        host=host,
+        container_id="old",
+        name="old",
+        image="alpine",
+        status="running",
+    )
+    live = MagicMock()
+    live.id = "new"
+    live.name = "web"
+    live.attrs = {
+        "State": {"Status": "exited", "Health": {"Status": None}, "StartedAt": ""},
+        "Config": {"Image": "nginx"},
+    }
+    client = MagicMock()
+    client.containers.all.return_value = [live]
+    with patch("monitor.collectors.docker.docker.from_env", return_value=client):
+        with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
+            DockerCollector().collect()
+    stale.refresh_from_db()
+    assert stale.status == "removed"
 
 
 @pytest.mark.django_db
@@ -189,14 +225,60 @@ def test_github_collect_skips_without_scope(host, caplog):
     assert "GITHUB_ORG" in caplog.text
 
 
+@pytest.mark.django_db
+@override_settings(
+    GITHUB_TOKEN="test-token",
+    GITHUB_ORG="my-org",
+    GITHUB_REPO="",
+    GITHUB_API_URL="https://api.github.com",
+)
+def test_github_marks_stale_when_others_returned(host):
+    stale = GitHubRunner.objects.create(
+        host=host,
+        runner_id=99,
+        name="gone",
+        labels=[],
+        status="idle",
+        busy=True,
+    )
+    response = MagicMock()
+    response.json.return_value = {
+        "runners": [
+            {
+                "id": 1,
+                "name": "live",
+                "status": "online",
+                "busy": False,
+                "labels": ["linux"],
+            }
+        ]
+    }
+    response.headers = {}
+    response.raise_for_status = MagicMock()
+    with patch("monitor.collectors.github.httpx.Client") as client_cls:
+        client = client_cls.return_value.__enter__.return_value
+        client.get.return_value = response
+        with patch("monitor.collectors.github.get_or_create_host", return_value=host):
+            GitHubRunnerCollector().collect()
+    stale.refresh_from_db()
+    assert stale.status == "offline"
+    assert stale.busy is False
+
+
 def test_host_boot_disk_net_error_paths():
-    with patch("monitor.collectors.host.psutil.boot_time", side_effect=OSError("x")):
+    with patch(
+        "monitor.collectors.host.psutil.boot_time",
+        side_effect=AttributeError("x"),
+    ):
         assert _read_boot_time() is None
-    with patch("monitor.collectors.host.psutil.disk_usage", side_effect=OSError("x")):
+    with patch(
+        "monitor.collectors.host.psutil.disk_usage",
+        side_effect=TypeError("x"),
+    ):
         assert _read_disk_usage() == (None, None, None)
     with patch(
         "monitor.collectors.host.psutil.net_io_counters",
-        side_effect=OSError("x"),
+        side_effect=TypeError("x"),
     ):
         assert _read_network_totals() == (None, None)
     with patch(
@@ -224,6 +306,7 @@ def test_network_rates_non_positive_elapsed():
         updated_at=now,
     )
     assert _network_rates(host, sent=20, recv=20, now=now) == (None, None)
+    assert _network_rates(host, sent=None, recv=20, now=now) == (None, None)
 
 
 @pytest.mark.django_db
@@ -311,6 +394,32 @@ def test_check_github_runners_empty_list(monkeypatch, capsys):
         call_command("check_github_runners")
     out = capsys.readouterr().out
     assert "0 runners" in out
+
+
+@pytest.mark.django_db
+def test_check_github_runners_string_labels(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "monitor.management.commands.check_github_runners._fetch_all_runners",
+        lambda *_a, **_k: [
+            {
+                "id": 1,
+                "name": "box",
+                "status": "online",
+                "busy": True,
+                "labels": ["self-hosted", {"name": "linux"}],
+            }
+        ],
+    )
+    with override_settings(
+        GITHUB_TOKEN="t",
+        GITHUB_ORG="",
+        GITHUB_REPO="owner/repo",
+        GITHUB_API_URL="https://api.github.com",
+    ):
+        call_command("check_github_runners")
+    out = capsys.readouterr().out
+    assert "box" in out
+    assert "linux" in out
 
 
 def test_collect_metrics_handle_signal():
@@ -425,8 +534,12 @@ def test_template_filters_remaining_branches():
     assert duration_short(timezone.now() + timedelta(seconds=5)) == "0s"
     assert duration_short(timezone.now() - timedelta(minutes=9)) == "9m"
     assert duration_short(timezone.now() - timedelta(hours=2, minutes=1)) == "2h 1m"
+    assert duration_short(timezone.now() - timedelta(days=2, minutes=10)) == "2d 10m"
+    assert duration_short(timezone.now() - timedelta(days=2)) == "2d"
     assert duration_short(timezone.now() - timedelta(seconds=8)) == "8s"
+    assert bar_color(object()) == bar_color(None)
     assert "GB/s" in bitrate(5 * 1024**3)
+    assert bitrate(200 * 1024) == "200 KB/s"
     assert bitrate(50.0) == "50 B/s"
 
 
@@ -451,6 +564,12 @@ def test_health_ok(client):
 def test_fragments_empty_host(client):
     assert b"No host data" in client.get("/fragments/containers/").content
     assert b"No host data" in client.get("/fragments/runners/").content
+
+
+@pytest.mark.django_db
+def test_container_row_unknown(client, host):
+    response = client.get("/fragments/container/99999/row/")
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db

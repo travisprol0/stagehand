@@ -1,33 +1,10 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
 
 from monitor.collectors.host import HostMetricsCollector
 from monitor.models import Host, MetricSnapshot, MetricSubject
-
-
-@pytest.fixture
-def psutil_mocks():
-    with patch("monitor.collectors.host.psutil") as mock_psutil:
-        mock_psutil.cpu_percent.return_value = 42.0
-        mock_psutil.virtual_memory.return_value = MagicMock(
-            percent=61.0,
-            used=8_000_000_000,
-            total=16_000_000_000,
-        )
-        mock_psutil.getloadavg.return_value = (1.2, 0.9, 0.7)
-        mock_psutil.boot_time.return_value = 1_700_000_000.0
-        mock_psutil.disk_usage.return_value = MagicMock(
-            percent=40.0,
-            used=100_000_000_000,
-            total=250_000_000_000,
-        )
-        mock_psutil.net_io_counters.return_value = {
-            "lo": MagicMock(bytes_sent=999, bytes_recv=999),
-            "eth0": MagicMock(bytes_sent=1_000_000, bytes_recv=2_000_000),
-        }
-        yield mock_psutil
 
 
 @pytest.mark.django_db

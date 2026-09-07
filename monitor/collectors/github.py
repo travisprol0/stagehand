@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import logging
 import re
 
-import httpx
 from django.conf import settings
 
 from monitor.collectors.base import BaseCollector
@@ -40,7 +41,7 @@ def _next_page_url(link_header: str | None) -> str | None:
     return None
 
 
-def _fetch_all_runners(client: httpx.Client, start_url: str) -> list[dict]:
+def _fetch_all_runners(client, start_url: str) -> list[dict]:
     runners: list[dict] = []
     url: str | None = start_url
 
@@ -70,6 +71,8 @@ class GitHubRunnerCollector(BaseCollector):
             return
 
         logger.info("Fetching GitHub runners from %s", endpoint)
+
+        import httpx
 
         host = get_or_create_host()
         headers = {

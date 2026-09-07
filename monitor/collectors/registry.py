@@ -1,14 +1,21 @@
-from monitor.collectors.base import BaseCollector
-from monitor.collectors.docker import DockerCollector
-from monitor.collectors.github import GitHubRunnerCollector
-from monitor.collectors.host import HostMetricsCollector
+import logging
 
-_COLLECTOR_CLASSES: list[type[BaseCollector]] = [
-    HostMetricsCollector,
-    DockerCollector,
-    GitHubRunnerCollector,
-]
+from monitor.collectors.base import BaseCollector
+
+logger = logging.getLogger(__name__)
 
 
 def get_collectors() -> list[BaseCollector]:
-    return [collector_class() for collector_class in _COLLECTOR_CLASSES]
+    collectors: list[BaseCollector] = []
+    imports = (
+        ("monitor.collectors.host", "HostMetricsCollector"),
+        ("monitor.collectors.docker", "DockerCollector"),
+        ("monitor.collectors.github", "GitHubRunnerCollector"),
+    )
+    for module_name, class_name in imports:
+        try:
+            module = __import__(module_name, fromlist=[class_name])
+            collectors.append(getattr(module, class_name)())
+        except Exception:
+            logger.exception("Failed to load collector %s", class_name)
+    return collectors
