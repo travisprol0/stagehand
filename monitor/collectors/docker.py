@@ -67,7 +67,7 @@ class DockerCollector(BaseCollector):
             return
 
         try:
-            containers = client.containers.all()
+            containers = client.containers.list(all=True)
         except DockerException as exc:
             logger.warning("Failed to list Docker containers: %s", exc)
             return

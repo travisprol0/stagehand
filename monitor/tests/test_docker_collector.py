@@ -51,7 +51,7 @@ def host(db):
 def test_collect_upserts_docker_container(host):
     container = _make_container()
     client = MagicMock()
-    client.containers.all.return_value = [container]
+    client.containers.list.return_value = [container]
 
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
@@ -70,7 +70,7 @@ def test_collect_upserts_docker_container(host):
 def test_running_container_gets_metric_snapshot(host):
     container = _make_container()
     client = MagicMock()
-    client.containers.all.return_value = [container]
+    client.containers.list.return_value = [container]
 
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
@@ -101,7 +101,7 @@ def test_unreachable_docker_logs_warning_no_raise(host, caplog):
 def test_no_mutating_docker_calls(host):
     container = _make_container()
     client = MagicMock()
-    client.containers.all.return_value = [container]
+    client.containers.list.return_value = [container]
 
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
@@ -122,7 +122,7 @@ def test_missing_container_marked_removed(host):
         status="running",
     )
     client = MagicMock()
-    client.containers.all.return_value = []
+    client.containers.list.return_value = []
 
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
@@ -136,7 +136,7 @@ def test_missing_container_marked_removed(host):
 def test_exited_container_no_snapshot(host):
     container = _make_container(status="exited")
     client = MagicMock()
-    client.containers.all.return_value = [container]
+    client.containers.list.return_value = [container]
 
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):

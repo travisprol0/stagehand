@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 
+import httpx
 from django.conf import settings
 
 from monitor.collectors.base import BaseCollector
@@ -71,8 +72,6 @@ class GitHubRunnerCollector(BaseCollector):
             return
 
         logger.info("Fetching GitHub runners from %s", endpoint)
-
-        import httpx
 
         host = get_or_create_host()
         headers = {

@@ -129,7 +129,7 @@ def test_memory_bytes_missing_stats():
 @pytest.mark.django_db
 def test_docker_list_containers_failure(host):
     client = MagicMock()
-    client.containers.all.side_effect = docker.errors.DockerException("list failed")
+    client.containers.list.side_effect = docker.errors.DockerException("list failed")
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
             DockerCollector().collect()
@@ -153,7 +153,7 @@ def test_docker_marks_absent_when_others_listed(host):
         "Config": {"Image": "nginx"},
     }
     client = MagicMock()
-    client.containers.all.return_value = [live]
+    client.containers.list.return_value = [live]
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
             DockerCollector().collect()
@@ -172,7 +172,7 @@ def test_docker_stats_failure_still_upserts(host):
     }
     container.stats.side_effect = docker.errors.DockerException("stats failed")
     client = MagicMock()
-    client.containers.all.return_value = [container]
+    client.containers.list.return_value = [container]
     with patch("monitor.collectors.docker.docker.from_env", return_value=client):
         with patch("monitor.collectors.docker.get_or_create_host", return_value=host):
             DockerCollector().collect()
@@ -311,8 +311,11 @@ def test_network_rates_non_positive_elapsed():
 
 @pytest.mark.django_db
 def test_host_collect_created_log(psutil_mocks, caplog):
-    with patch("monitor.collectors.host.socket.gethostname", return_value="test-host"):
-        HostMetricsCollector().collect()
+    with caplog.at_level("INFO", logger="monitor.collectors.host"):
+        with patch(
+            "monitor.collectors.host.socket.gethostname", return_value="test-host"
+        ):
+            HostMetricsCollector().collect()
     assert "Created host record" in caplog.text
 
 
@@ -477,7 +480,9 @@ def test_build_polyline_and_area_short_series():
     assert " " in build_polyline([0.0, None, 50.0])
 
 
-@override_settings(GITHUB_ORG="", GITHUB_REPO="", GITHUB_API_URL="https://api.github.com")
+@override_settings(
+    GITHUB_ORG="", GITHUB_REPO="", GITHUB_API_URL="https://api.github.com"
+)
 def test_github_runner_helpers_unset():
     assert runners_endpoint() is None
     assert "unset" in runners_scope_label()
