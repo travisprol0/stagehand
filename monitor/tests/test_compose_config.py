@@ -22,6 +22,16 @@ def test_compose_services_exist(compose_config):
     assert "collector" in services
 
 
+def test_web_and_collector_share_one_image(compose_config):
+    web = compose_config["services"]["web"]
+    collector = compose_config["services"]["collector"]
+
+    assert web.get("build") == "."
+    assert web.get("image") == "stagehand:local"
+    assert collector.get("image") == "stagehand:local"
+    assert "build" not in collector
+
+
 def test_web_and_collector_mount_docker_socket_read_only(compose_config):
     for service_name in ("web", "collector"):
         volumes = compose_config["services"][service_name].get("volumes", [])

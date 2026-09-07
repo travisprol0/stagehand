@@ -18,6 +18,7 @@ services:
 
   web:
     build: .
+    image: stagehand:local
     container_name: stagehand-web
     ports:
       - "8000:8000"
@@ -42,7 +43,7 @@ services:
     restart: unless-stopped
 
   collector:
-    build: .
+    image: stagehand:local
     container_name: stagehand-collector
     env_file:
       - .env
