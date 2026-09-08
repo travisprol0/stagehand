@@ -76,7 +76,9 @@ def test_dashboard_pairs_chart_and_runners_on_large_screens(client, host, host_s
     assert 'id="charts-section"' in content
     assert 'id="runners-section"' in content
     assert 'id="containers-section"' in content
-    assert "lg:h-72" in content
+    assert "lg:min-h-72" in content
+    assert "lg:max-h-72" not in content
+    assert "overflow-y-auto" not in content
 
 
 @pytest.mark.django_db

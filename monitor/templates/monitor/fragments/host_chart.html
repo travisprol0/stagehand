@@ -1,18 +1,19 @@
 <div
   id="host-chart"
+  class="flex min-h-0 flex-1 flex-col"
   hx-get="/fragments/charts/host/"
   hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >
   {% if chart %}
-    <div>
+    <div class="flex min-h-0 flex-1 flex-col">
       <div class="mb-2 flex items-center justify-between text-sm">
         <span class="font-medium text-slate-700 dark:text-zinc-200">CPU, memory, and disk</span>
         <span class="text-xs text-slate-500 dark:text-zinc-400">Last hour</span>
       </div>
       <svg
         viewBox="0 0 400 100"
-        class="h-64 w-full lg:h-72"
+        class="h-64 w-full flex-1 lg:min-h-72"
         role="img"
         aria-label="Host CPU, memory, and disk usage over the last hour"
       >
