@@ -1,9 +1,13 @@
 import pytest
-from django.test import Client
+from datetime import datetime, timezone as dt_timezone
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
+
+from django.test import Client, override_settings
 from django.utils import timezone
 
 from monitor.models import MetricSnapshot, MetricSubject
-from monitor.services.charts import downsample_points
+from monitor.services.charts import downsample_points, get_host_chart_data
 
 
 @pytest.fixture
@@ -80,3 +84,31 @@ def test_downsample_points_keeps_small_series():
     result = downsample_points(points)
 
     assert len(result) == 50
+
+
+@pytest.mark.django_db
+@override_settings(TIME_ZONE="America/New_York")
+def test_host_chart_labels_use_eastern_time(host):
+    timezone.activate(ZoneInfo("America/New_York"))
+    frozen_now = datetime(2026, 9, 8, 16, 10, tzinfo=dt_timezone.utc)
+    start = datetime(2026, 9, 8, 15, 20, tzinfo=dt_timezone.utc)
+    end = datetime(2026, 9, 8, 16, 5, tzinfo=dt_timezone.utc)
+    for recorded_at, cpu in ((start, 10.0), (end, 40.0)):
+        MetricSnapshot.objects.create(
+            recorded_at=recorded_at,
+            subject_type=MetricSubject.HOST,
+            host=host,
+            cpu_percent=cpu,
+            memory_percent=50.0,
+            disk_percent=20.0,
+        )
+
+    try:
+        with patch("monitor.models.timezone.now", return_value=frozen_now):
+            chart = get_host_chart_data(host)
+    finally:
+        timezone.deactivate()
+
+    assert chart is not None
+    assert chart.start_label == "11:20"
+    assert chart.end_label == "12:05"

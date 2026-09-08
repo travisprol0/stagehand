@@ -64,18 +64,19 @@ def test_dashboard_has_responsive_grid_classes(client, host):
 
 
 @pytest.mark.django_db
-def test_dashboard_stacks_full_width_bands(client, host, host_snapshots, runner):
+def test_dashboard_pairs_chart_and_runners_on_large_screens(client, host, host_snapshots, runner):
     response = client.get("/")
     content = response.content.decode()
 
-    assert "flex flex-col gap-4" in content
-    assert "xl:col-span-2" not in content
-    assert "xl:col-span-3" not in content
-    assert "xl:grid-cols-4" in content
+    assert "lg:grid-cols-3" in content
+    assert "lg:col-span-2" in content
+    assert "lg:col-span-1" in content
+    assert "lg:grid-cols-1" in content
+    assert "xl:grid-cols-4" not in content
     assert 'id="charts-section"' in content
     assert 'id="runners-section"' in content
     assert 'id="containers-section"' in content
-    assert "h-72" in content
+    assert "lg:h-72" in content
 
 
 @pytest.mark.django_db

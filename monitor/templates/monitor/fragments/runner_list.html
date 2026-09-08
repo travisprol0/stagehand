@@ -1,6 +1,7 @@
 {% load monitor_extras %}
 <div
   id="runner-list"
+  class="flex min-h-0 flex-1 flex-col"
   hx-get="/fragments/runners/"
   hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
@@ -14,7 +15,7 @@
     {% endif %}
   </div>
   {% if runners %}
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div class="grid min-h-0 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 lg:max-h-72 lg:grid-cols-1">
       {% for runner in runners %}
         <article
           class="flex rounded-lg border border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/60{% if runner.busy %} busy-pulse{% endif %}"

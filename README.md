@@ -125,6 +125,7 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 | `POSTGRES_HOST` | `localhost` | Database host (`db` inside Compose network) |
 | `POSTGRES_PORT` | `5433` | Database port (`5432` inside Compose network) |
 | `HOST_NAME` | `talos` | Label for the monitored host row |
+| `TIME_ZONE` | `America/New_York` | Display timezone for chart clocks (storage stays UTC) |
 | `METRICS_INTERVAL_SECONDS` | `10` | Collector and HTMX poll interval |
 | `GITHUB_TOKEN` | — | GitHub PAT for runner API (collector skips if unset) |
 | `GITHUB_ORG` | — | Organization slug for org-level runners |

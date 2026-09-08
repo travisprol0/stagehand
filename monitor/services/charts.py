@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from django.utils import timezone
+
 from monitor.models import Host, MetricSnapshot
 
 DOWNSAMPLE_THRESHOLD = 200
@@ -95,7 +97,10 @@ def get_host_chart_data(host: Host, *, minutes: int = 60) -> HostChartData | Non
     cpu_values = [snapshot.cpu_percent or 0.0 for snapshot in snapshots]
     memory_values = [snapshot.memory_percent or 0.0 for snapshot in snapshots]
     disk_values = [snapshot.disk_percent or 0.0 for snapshot in snapshots]
-    time_labels = [snapshot.recorded_at.strftime("%H:%M") for snapshot in snapshots]
+    time_labels = [
+        timezone.localtime(snapshot.recorded_at).strftime("%H:%M")
+        for snapshot in snapshots
+    ]
 
     return HostChartData(
         cpu_polyline=build_polyline(cpu_values),
