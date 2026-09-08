@@ -14,7 +14,7 @@
     {% endif %}
   </div>
   {% if runners %}
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {% for runner in runners %}
         <article
           class="flex rounded-lg border border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/60{% if runner.busy %} busy-pulse{% endif %}"
