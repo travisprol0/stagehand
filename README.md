@@ -10,6 +10,11 @@ Private infrastructure monitor for host **talos**: Django + PostgreSQL dashboard
 - **Docker** — container status, health, and resource usage via a read-only Docker socket
 - **GitHub Actions** — self-hosted runner idle/active/offline state via the GitHub REST API
 
+On **talos**, this monitors the four lattice-runner registrations (`talos-1`…`talos-4`)
+for repo `travisprol0/lattice-log`. lattice-log CI uses those runners plus **host**
+Postgres at `127.0.0.1:5432`; the production app on Render (https://latticelog.com)
+is separate. stagehand’s own Compose Postgres is only for the monitor DB (not CI).
+
 A Django dashboard renders server-side HTML fragments (HTMX) with Tailwind CSS and Alpine.js for polling, dark mode, and a container logs modal. Historical CPU and memory trends are drawn as inline SVG charts from `MetricSnapshot` rows.
 
 ## Local development
@@ -129,16 +134,22 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 | `METRICS_INTERVAL_SECONDS` | `10` | Collector and HTMX poll interval |
 | `GITHUB_TOKEN` | — | GitHub PAT for runner API (collector skips if unset) |
 | `GITHUB_ORG` | — | Organization slug for org-level runners |
-| `GITHUB_REPO` | — | `owner/repo` for repo-level runners (use org **or** repo) |
+| `GITHUB_REPO` | — | `owner/repo` for repo-level runners; on talos use `travisprol0/lattice-log` |
 | `GITHUB_API_URL` | `https://api.github.com` | GitHub API base URL |
+| `DOCKER_HOST` | local socket | Docker daemon URL (optional) |
 
 ### GitHub self-hosted runners
 
 Runners only appear if the collector can list them via the GitHub API. That means:
 
 1. **`GITHUB_TOKEN`** is set in `.env` (and the `collector` service sees it if using Compose).
-2. **Scope matches registration** — if runners were added under a specific repo (Settings → Actions → Runners), set `GITHUB_REPO=owner/repo` for **that** repo and leave `GITHUB_ORG` empty. If they are org-wide runners, set `GITHUB_ORG` instead.
+2. **Scope matches registration** — on talos use `GITHUB_REPO=travisprol0/lattice-log` and leave `GITHUB_ORG` empty (lattice-runner registers at repo level). Org-wide runners would use `GITHUB_ORG` instead.
 3. **Collector is running** — `./start.sh --collector`, or the Compose `collector` service.
+
+Each collect cycle **deletes** `GitHubRunner` rows whose `runner_id` is no longer
+returned by GitHub (offline ghosts after re-registration get new ids). If GitHub
+still lists offline duplicate `talos-N` entries, prune them in lattice-runner
+(`scripts/prune_offline_runners.py`) first — stagehand mirrors GitHub.
 
 Verify configuration:
 
@@ -148,8 +159,19 @@ python manage.py check_github_runners
 
 Classic PAT scopes: `repo` for repo-level runners; `admin:org` for org-level runners. Fine-grained tokens need Actions read on the repo or org.
 
-After changing `.env`, restart the collector (`docker compose restart collector` or restart `./start.sh --collector`).
-| `DOCKER_HOST` | local socket | Docker daemon URL (optional) |
+`web` / `collector` bake code into `stagehand:local` with **no source bind-mount**.
+After pulling stagehand changes on talos, rebuild and recreate (restart is not enough):
+
+```bash
+cd ~/stagehand
+git pull
+docker compose build collector
+docker compose up -d --force-recreate collector
+# also rebuild web when templates/views change:
+# docker compose build web && docker compose up -d --force-recreate web
+```
+
+Local-dev collector only: restart `./start.sh --collector` after `.env` edits.
 
 ## Running tests
 
