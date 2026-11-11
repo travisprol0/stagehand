@@ -240,14 +240,9 @@ class GitHubRunnerCollector(BaseCollector):
                 },
             )
 
-        stale_update = {
-            "status": RunnerStatus.OFFLINE,
-            "busy": False,
-            **_EMPTY_JOB,
-        }
+        # Runners removed from GitHub (or never returned) must be deleted, not
+        # left as offline ghosts — re-registration creates new runner_ids.
+        missing = GitHubRunner.objects.filter(host=host)
         if seen_ids:
-            GitHubRunner.objects.filter(host=host).exclude(
-                runner_id__in=seen_ids,
-            ).update(**stale_update)
-        else:
-            GitHubRunner.objects.filter(host=host).update(**stale_update)
+            missing = missing.exclude(runner_id__in=seen_ids)
+        missing.delete()

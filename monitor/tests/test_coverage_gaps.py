@@ -232,8 +232,8 @@ def test_github_collect_skips_without_scope(host, caplog):
     GITHUB_REPO="",
     GITHUB_API_URL="https://api.github.com",
 )
-def test_github_marks_stale_when_others_returned(host):
-    stale = GitHubRunner.objects.create(
+def test_github_deletes_stale_when_others_returned(host):
+    GitHubRunner.objects.create(
         host=host,
         runner_id=99,
         name="gone",
@@ -260,9 +260,8 @@ def test_github_marks_stale_when_others_returned(host):
         client.get.return_value = response
         with patch("monitor.collectors.github.get_or_create_host", return_value=host):
             GitHubRunnerCollector().collect()
-    stale.refresh_from_db()
-    assert stale.status == "offline"
-    assert stale.busy is False
+    assert not GitHubRunner.objects.filter(host=host, runner_id=99).exists()
+    assert GitHubRunner.objects.filter(host=host, runner_id=1).exists()
 
 
 def test_host_boot_disk_net_error_paths():

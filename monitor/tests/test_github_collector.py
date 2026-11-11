@@ -210,8 +210,8 @@ def test_token_never_appears_in_logs(host, caplog):
     GITHUB_REPO="",
     GITHUB_API_URL="https://api.github.com",
 )
-def test_missing_runners_marked_offline(host):
-    stale = GitHubRunner.objects.create(
+def test_missing_runners_deleted(host):
+    GitHubRunner.objects.create(
         host=host,
         runner_id=99,
         name="gone-runner",
@@ -229,6 +229,4 @@ def test_missing_runners_marked_offline(host):
         with patch("monitor.collectors.github.get_or_create_host", return_value=host):
             GitHubRunnerCollector().collect()
 
-    stale.refresh_from_db()
-    assert stale.status == RunnerStatus.OFFLINE
-    assert stale.busy is False
+    assert not GitHubRunner.objects.filter(host=host, runner_id=99).exists()
