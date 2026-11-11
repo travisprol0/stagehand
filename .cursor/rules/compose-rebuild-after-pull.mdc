@@ -1,0 +1,20 @@
+---
+description: After git pull on talos, rebuild Compose images — restart is not enough
+alwaysApply: true
+---
+
+# Compose image rebuild after pull
+
+`web` and `collector` run from image `stagehand:local` with **no source bind-mount**. `docker compose restart` keeps the old baked-in code.
+
+```text
+# ❌
+git pull && docker compose restart collector
+
+# ✅
+git pull
+docker compose build collector
+docker compose up -d --force-recreate collector
+```
+
+Rebuild `web` the same way when template/view code changes.
