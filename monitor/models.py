@@ -6,7 +6,7 @@ from django.utils import timezone
 
 
 class Host(models.Model):
-    name = models.CharField(max_length=64, unique=True, default="talos")
+    name = models.CharField(max_length=64, unique=True)
     hostname = models.CharField(max_length=255)
     cpu_percent = models.FloatField(null=True, blank=True)
     memory_percent = models.FloatField(null=True, blank=True)
@@ -24,6 +24,8 @@ class Host(models.Model):
     net_sent_bps = models.FloatField(null=True, blank=True)
     net_recv_bps = models.FloatField(null=True, blank=True)
     cpu_count = models.IntegerField(null=True, blank=True)
+    reachable = models.BooleanField(default=True)
+    last_error = models.CharField(max_length=255, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

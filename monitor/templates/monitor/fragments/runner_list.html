@@ -1,13 +1,13 @@
 {% load monitor_extras %}
 <div
-  id="runner-list"
+  id="{{ prefix }}runner-list"
   class="flex flex-1 flex-col"
-  hx-get="/fragments/runners/"
+  hx-get="/fragments/runners/{{ qs }}"
   hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >
   <div class="mb-3 flex items-baseline justify-between gap-3">
-    <h2 id="runners-heading" class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Runners</h2>
+    <h2 id="{{ prefix }}runners-heading" class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Runners</h2>
     {% if runner_stats %}
       <p class="text-xs text-slate-500 dark:text-zinc-400">
         {{ runner_stats.idle }} idle · {{ runner_stats.active }} active · {{ runner_stats.offline }} offline

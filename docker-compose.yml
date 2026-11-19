@@ -57,6 +57,8 @@ services:
     volumes:
       - /:/host:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # SSH to remote hosts (REMOTE_HOSTS): read-only, default key + known_hosts only.
+      - ${HOME}/.ssh:/root/.ssh:ro
     depends_on:
       db:
         condition: service_healthy

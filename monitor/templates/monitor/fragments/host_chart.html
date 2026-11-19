@@ -1,7 +1,7 @@
 <div
-  id="host-chart"
+  id="{{ prefix }}host-chart"
   class="flex min-h-0 flex-1 flex-col"
-  hx-get="/fragments/charts/host/"
+  hx-get="/fragments/charts/host/{{ qs }}"
   hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >

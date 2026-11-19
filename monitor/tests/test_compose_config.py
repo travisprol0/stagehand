@@ -60,3 +60,13 @@ def test_dockerignore_excludes_env_and_venv():
 
     assert ".env" in content
     assert ".venv" in content
+
+
+def test_collector_mounts_ssh_dir_read_only(compose_config):
+    volumes = compose_config["services"]["collector"].get("volumes", [])
+
+    assert "${HOME}/.ssh:/root/.ssh:ro" in volumes
+    assert not any(
+        "/.ssh" in str(volume)
+        for volume in compose_config["services"]["web"].get("volumes", [])
+    )

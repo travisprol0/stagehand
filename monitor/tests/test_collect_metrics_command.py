@@ -8,11 +8,11 @@ from monitor.collectors.registry import get_collectors
 
 
 @pytest.mark.django_db
-def test_registry_exposes_three_stub_collectors():
+def test_registry_exposes_all_collectors():
     collectors = get_collectors()
     names = {collector.name for collector in collectors}
-    assert names == {"host", "docker", "github"}
-    assert len(collectors) == 3
+    assert names == {"host", "docker", "github", "remote-host"}
+    assert len(collectors) == 4
     for collector in collectors:
         assert isinstance(collector, BaseCollector)
 

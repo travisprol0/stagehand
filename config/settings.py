@@ -130,3 +130,37 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_ORG = os.environ.get("GITHUB_ORG", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com")
+
+
+def _remote_hosts_from_env(env) -> dict[str, str]:
+    """Map remote host name -> SSH target from REMOTE_HOSTS + REMOTE_<NAME>_SSH.
+
+    Example: REMOTE_HOSTS=hermes REMOTE_HERMES_SSH=twelvetwo@192.168.50.65
+    Empty REMOTE_HOSTS means local-only monitoring (the default).
+    """
+    import re
+
+    from django.core.exceptions import ImproperlyConfigured
+
+    names = [n.strip().lower() for n in env.get("REMOTE_HOSTS", "").split(",")]
+    hosts: dict[str, str] = {}
+    for name in filter(None, names):
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,62}", name):
+            raise ImproperlyConfigured(
+                f"REMOTE_HOSTS entry {name!r} is not a valid host name"
+            )
+        if name == env.get("HOST_NAME", "talos"):
+            raise ImproperlyConfigured(
+                f"REMOTE_HOSTS must not include HOST_NAME ({name!r})"
+            )
+        key = f"REMOTE_{name.upper().replace('-', '_')}_SSH"
+        target = env.get(key, "").strip()
+        if not target:
+            raise ImproperlyConfigured(
+                f"{key} is required for REMOTE_HOSTS entry {name!r}"
+            )
+        hosts[name] = target
+    return hosts
+
+
+REMOTE_HOSTS = _remote_hosts_from_env(os.environ)

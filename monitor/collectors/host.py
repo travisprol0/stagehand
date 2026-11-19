@@ -113,6 +113,62 @@ def _cpu_count() -> int | None:
     return int(count)
 
 
+def store_host_sample(
+    host: Host,
+    *,
+    hostname: str,
+    now,
+    cpu_percent,
+    cpu_count,
+    memory_percent,
+    memory_used,
+    memory_total,
+    load,
+    boot_time,
+    disk,
+    net,
+    net_rates,
+) -> None:
+    """Persist one host sample (shared by the local and SSH-based collectors)."""
+    load_1, load_5, load_15 = load
+    disk_percent, disk_used, disk_total = disk
+    net_sent, net_recv = net
+    net_sent_bps, net_recv_bps = net_rates
+    Host.objects.filter(pk=host.pk).update(
+        hostname=hostname,
+        cpu_percent=cpu_percent,
+        memory_percent=memory_percent,
+        memory_used_bytes=memory_used,
+        memory_total_bytes=memory_total,
+        load_avg_1=load_1,
+        load_avg_5=load_5,
+        load_avg_15=load_15,
+        boot_time=boot_time,
+        disk_percent=disk_percent,
+        disk_used_bytes=disk_used,
+        disk_total_bytes=disk_total,
+        net_bytes_sent=net_sent,
+        net_bytes_recv=net_recv,
+        net_sent_bps=net_sent_bps,
+        net_recv_bps=net_recv_bps,
+        cpu_count=cpu_count,
+        reachable=True,
+        last_error="",
+        updated_at=now,
+    )
+    MetricSnapshot.objects.create(
+        recorded_at=now,
+        subject_type=MetricSubject.HOST,
+        host=host,
+        cpu_percent=cpu_percent,
+        memory_percent=memory_percent,
+        memory_bytes=memory_used,
+        disk_percent=disk_percent,
+        net_sent_bps=net_sent_bps,
+        net_recv_bps=net_recv_bps,
+    )
+
+
 class HostMetricsCollector(BaseCollector):
     name = "host"
 
@@ -138,37 +194,20 @@ class HostMetricsCollector(BaseCollector):
             now=now,
         )
 
-        Host.objects.filter(pk=host.pk).update(
+        store_host_sample(
+            host,
             hostname=hostname,
+            now=now,
             cpu_percent=cpu_percent,
-            memory_percent=memory.percent,
-            memory_used_bytes=memory.used,
-            memory_total_bytes=memory.total,
-            load_avg_1=load_1,
-            load_avg_5=load_5,
-            load_avg_15=load_15,
-            boot_time=boot_time,
-            disk_percent=disk_percent,
-            disk_used_bytes=disk_used,
-            disk_total_bytes=disk_total,
-            net_bytes_sent=net_sent,
-            net_bytes_recv=net_recv,
-            net_sent_bps=net_sent_bps,
-            net_recv_bps=net_recv_bps,
             cpu_count=cpu_count,
-            updated_at=now,
-        )
-
-        MetricSnapshot.objects.create(
-            recorded_at=now,
-            subject_type=MetricSubject.HOST,
-            host=host,
-            cpu_percent=cpu_percent,
             memory_percent=memory.percent,
-            memory_bytes=memory.used,
-            disk_percent=disk_percent,
-            net_sent_bps=net_sent_bps,
-            net_recv_bps=net_recv_bps,
+            memory_used=memory.used,
+            memory_total=memory.total,
+            load=(load_1, load_5, load_15),
+            boot_time=boot_time,
+            disk=(disk_percent, disk_used, disk_total),
+            net=(net_sent, net_recv),
+            net_rates=(net_sent_bps, net_recv_bps),
         )
 
         if created:

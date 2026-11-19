@@ -10,6 +10,7 @@ def get_collectors() -> list[BaseCollector]:
     imports = (
         ("monitor.collectors.host", "HostMetricsCollector"),
         ("monitor.collectors.docker", "DockerCollector"),
+        ("monitor.collectors.remote", "RemoteHostMetricsCollector"),
         ("monitor.collectors.github", "GitHubRunnerCollector"),
     )
     for module_name, class_name in imports:

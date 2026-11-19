@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
 from monitor.collectors.base import BaseCollector
-from monitor.models import GitHubRunner, RunnerStatus, get_or_create_host
+from monitor.models import GitHubRunner, Host, RunnerStatus, get_or_create_host
 from monitor.services.github_runners import runners_endpoint as _runners_endpoint
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,21 @@ def map_runner_status(api_status: str, busy: bool) -> str:
     if busy:
         return RunnerStatus.ACTIVE
     return RunnerStatus.IDLE
+
+
+def host_for_runner_name(runner_name: str, hosts: list[Host]) -> Host:
+    """Runner names are `<host>-<n>` (talos-1, hermes-1, talos-light).
+
+    The longest matching host-name prefix wins; unmatched runners fall back to
+    the first host (the local one).
+    """
+    best: Host | None = None
+    for host in hosts:
+        if runner_name.startswith(f"{host.name}-") and (
+            best is None or len(host.name) > len(best.name)
+        ):
+            best = host
+    return best or hosts[0]
 
 
 def _parse_label_names(labels: list) -> list[str]:
@@ -196,7 +211,11 @@ class GitHubRunnerCollector(BaseCollector):
 
         logger.info("Fetching GitHub runners from %s", endpoint)
 
-        host = get_or_create_host()
+        local = get_or_create_host()
+        hosts = [local] + [
+            Host.objects.get_or_create(name=name, defaults={"hostname": name})[0]
+            for name in settings.REMOTE_HOSTS
+        ]
         headers = {
             "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
             "Accept": "application/vnd.github+json",
@@ -229,9 +248,9 @@ class GitHubRunnerCollector(BaseCollector):
             job = jobs_by_runner.get(runner_id, _EMPTY_JOB) if busy else _EMPTY_JOB
 
             GitHubRunner.objects.update_or_create(
-                host=host,
                 runner_id=runner_id,
                 defaults={
+                    "host": host_for_runner_name(runner.get("name", ""), hosts),
                     "name": runner.get("name", ""),
                     "labels": _parse_label_names(runner.get("labels", [])),
                     "status": status,
@@ -242,7 +261,8 @@ class GitHubRunnerCollector(BaseCollector):
 
         # Runners removed from GitHub (or never returned) must be deleted, not
         # left as offline ghosts — re-registration creates new runner_ids.
-        missing = GitHubRunner.objects.filter(host=host)
+        # GitHub runner ids are global, so this spans every host.
+        missing = GitHubRunner.objects.all()
         if seen_ids:
             missing = missing.exclude(runner_id__in=seen_ids)
         missing.delete()

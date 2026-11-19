@@ -1,8 +1,8 @@
 {% load monitor_extras %}
 <div
-  id="host-summary"
+  id="{{ prefix }}host-summary"
   class="space-y-4"
-  hx-get="/fragments/host-summary/"
+  hx-get="/fragments/host-summary/{{ qs }}"
   hx-trigger="every {{ poll_seconds }}s, refresh from:body"
   hx-swap="outerHTML"
 >

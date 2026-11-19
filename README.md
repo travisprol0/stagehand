@@ -1,13 +1,13 @@
 # stagehand
 
-Private infrastructure monitor for host **talos**: Django + PostgreSQL dashboard for host metrics, Docker containers, and GitHub Actions self-hosted runners.
+Private infrastructure monitor for hosts **talos** (local) and **hermes** (remote over SSH): Django + PostgreSQL dashboard for host metrics, Docker containers, and GitHub Actions self-hosted runners, with one section per host.
 
 ## Overview
 
 **stagehand** collects metrics from three sources and stores them in PostgreSQL:
 
-- **Host** — CPU, memory, and load average via `psutil`
-- **Docker** — container status, health, and resource usage via a read-only Docker socket
+- **Host** — CPU, memory, load, disk, and network via `psutil` (local) or `/proc` over SSH (remote)
+- **Docker** — container status, health, and resource usage via the local read-only Docker socket, or `ssh://` for remote hosts
 - **GitHub Actions** — self-hosted runner idle/active/offline state via the GitHub REST API
 
 On **talos**, this monitors the four lattice-runner registrations (`talos-1`…`talos-4`)
@@ -129,7 +129,9 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 | `POSTGRES_PASSWORD` | `stagehand` | Database password |
 | `POSTGRES_HOST` | `localhost` | Database host (`db` inside Compose network) |
 | `POSTGRES_PORT` | `5433` | Database port (`5432` inside Compose network) |
-| `HOST_NAME` | `talos` | Label for the monitored host row |
+| `HOST_NAME` | `talos` | Name of the local host (the machine stagehand runs on) |
+| `REMOTE_HOSTS` | — | Comma-separated remote host names to monitor, e.g. `hermes` (unset = local only) |
+| `REMOTE_<NAME>_SSH` | — | SSH target for each remote host, `user@address`, e.g. `REMOTE_HERMES_SSH=twelvetwo@192.168.50.65` (required per name) |
 | `TIME_ZONE` | `America/New_York` | Display timezone for chart clocks (storage stays UTC) |
 | `METRICS_INTERVAL_SECONDS` | `10` | Collector and HTMX poll interval |
 | `GITHUB_TOKEN` | — | GitHub PAT for runner API (collector skips if unset) |
@@ -137,6 +139,18 @@ Copy [`.env.example`](.env.example) to `.env` and adjust values. Never commit `.
 | `GITHUB_REPO` | — | `owner/repo` for repo-level runners; on talos use `travisprol0/lattice-log` |
 | `GITHUB_API_URL` | `https://api.github.com` | GitHub API base URL |
 | `DOCKER_HOST` | local socket | Docker daemon URL (optional) |
+
+### Remote hosts (hermes)
+
+Each name in `REMOTE_HOSTS` gets its own dashboard section: host metrics, containers and the runners whose names start with `<name>-` (e.g. `hermes-1`). Local runners (`talos-*`) stay in the talos section; a runner whose name matches no host falls back to the local host.
+
+Requirements, all on the machine running the `collector` service (talos):
+
+- Key-based SSH works non-interactively: `ssh <REMOTE_HERMES_SSH> true` succeeds from talos. Compose mounts `~/.ssh` read-only into the collector at `/root/.ssh`, so the default key and `known_hosts` are used. The host key must already be in `known_hosts` (connect once interactively); unknown hosts are rejected, not trusted on first use.
+- The remote user can run Docker (`docker` group). That group is root-equivalent on the remote host, so the key is effectively root there. Keep it to the stagehand collector only.
+- The remote host is Linux (metrics are read from `/proc`).
+
+If a remote host stops answering, its section shows an **unreachable** error in the alert list with the last error and the age of its last good data. The page keeps rendering; the other hosts are unaffected.
 
 ### GitHub self-hosted runners
 

@@ -2,16 +2,19 @@ import logging
 from datetime import datetime
 
 import docker
+from django.conf import settings
 from django.utils import timezone
 from docker.errors import DockerException
 
 from monitor.collectors.base import BaseCollector
 from monitor.models import (
     DockerContainer,
+    Host,
     MetricSnapshot,
     MetricSubject,
     get_or_create_host,
 )
+from monitor.services.remote import docker_ssh_url, remote_ssh_target
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +104,34 @@ def _memory_bytes_from_stats(stats: dict) -> int | None:
         return None
 
 
+def docker_client_for(host: Host):
+    """Docker client for a host: local socket, or ssh:// for a remote host."""
+    target = remote_ssh_target(host.name)
+    if target is None:
+        return docker.from_env(timeout=10)
+    return docker.DockerClient(base_url=docker_ssh_url(target), timeout=10)
+
+
 class DockerCollector(BaseCollector):
     name = "docker"
 
     def collect(self) -> None:
-        host = get_or_create_host()
+        hosts = [get_or_create_host()]
+        for name in settings.REMOTE_HOSTS:
+            host, _ = Host.objects.get_or_create(name=name, defaults={"hostname": name})
+            hosts.append(host)
+        for host in hosts:
+            # One unreachable host must not stop the others.
+            try:
+                self._collect_host(host)
+            except Exception:
+                logger.exception("Docker collection failed on %s", host.name)
 
+    def _collect_host(self, host: Host) -> None:
         try:
-            client = docker.from_env(timeout=10)
+            client = docker_client_for(host)
         except DockerException as exc:
-            logger.warning("Docker unavailable: %s", exc)
+            logger.warning("Docker unavailable on %s: %s", host.name, exc)
             return
 
         try:

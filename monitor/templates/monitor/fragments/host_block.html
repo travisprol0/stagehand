@@ -1,0 +1,86 @@
+{% comment %}One dashboard section for one host. Local host uses unprefixed ids.{% endcomment %}
+<div class="flex flex-col gap-4" data-host="{{ host_name_label }}">
+  {% if host_name_label != host_name %}
+    <h2 class="mt-2 flex items-center gap-2 text-sm font-semibold tracking-tight">
+      {{ host_name_label }}
+      {% if host and not host.reachable %}
+        <span class="rounded-full bg-red-100 px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wider text-red-800 dark:bg-red-950/60 dark:text-red-200">unreachable</span>
+      {% endif %}
+    </h2>
+  {% endif %}
+
+  {% if host %}
+    {% include "monitor/fragments/host_summary.html" %}
+  {% else %}
+    <div
+      id="{{ prefix }}host-summary"
+      hx-get="/fragments/host-summary/{{ qs }}"
+      hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+      hx-swap="outerHTML"
+    >
+      {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
+    <section
+      id="{{ prefix }}charts-section"
+      class="panel flex flex-col p-5 lg:col-span-2"
+      aria-labelledby="{{ prefix }}charts-heading"
+    >
+      <h2 id="{{ prefix }}charts-heading" class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Metrics</h2>
+      {% if host %}
+        {% include "monitor/fragments/host_chart.html" with chart=chart %}
+      {% else %}
+        <div
+          id="{{ prefix }}host-chart"
+          hx-get="/fragments/charts/host/{{ qs }}"
+          hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section
+      id="{{ prefix }}runners-section"
+      class="panel flex flex-col p-5 lg:col-span-1"
+      aria-labelledby="{{ prefix }}runners-heading"
+    >
+      {% if host %}
+        {% include "monitor/fragments/runner_list.html" %}
+      {% else %}
+        <h2 id="{{ prefix }}runners-heading" class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Runners</h2>
+        <div
+          id="{{ prefix }}runner-list"
+          hx-get="/fragments/runners/{{ qs }}"
+          hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section
+    id="{{ prefix }}containers-section"
+    class="panel p-5"
+    aria-labelledby="{{ prefix }}containers-heading"
+  >
+    {% if host %}
+      {% include "monitor/fragments/container_table.html" %}
+    {% else %}
+      <h2 id="{{ prefix }}containers-heading" class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Containers</h2>
+      <div
+        id="{{ prefix }}container-table"
+        hx-get="/fragments/containers/{{ qs }}"
+        hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+        hx-swap="outerHTML"
+      >
+        {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+      </div>
+    {% endif %}
+  </section>
+</div>
