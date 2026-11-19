@@ -76,7 +76,10 @@ def test_dashboard_refresh_listens_on_body(client, host, host_snapshots):
 
     assert 'hx-trigger="every ' in content
     assert "refresh from:body" in content
-    assert content.count("refresh from:body") >= 4
+    # host summary, runner panel, container table; the host chart loads lazily
+    # when its row is expanded and polls from then on.
+    assert content.count("refresh from:body") >= 3
+    assert 'hx-trigger="intersect once"' in content
 
 
 def test_refresh_all_triggers_htmx_body_event():

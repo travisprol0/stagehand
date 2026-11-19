@@ -1,100 +1,219 @@
 {% load monitor_extras %}
 <div
   id="{{ prefix }}runner-list"
-  class="flex flex-1 flex-col"
-  hx-get="/fragments/runners/{{ qs }}"
-  hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+  hx-get="/fragments/runners/{{ runners_qs }}"
+  hx-trigger="every {{ poll_seconds }}s[!document.querySelector('#runner-filters:focus-within')], refresh from:body"
   hx-swap="outerHTML"
 >
-  <div class="mb-3 flex items-baseline justify-between gap-3">
-    <h2 id="{{ prefix }}runners-heading" class="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Runners</h2>
-    {% if runner_stats %}
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+    <div class="flex items-baseline gap-3">
+      <h2 id="{{ prefix }}runners-heading" class="text-sm font-semibold tracking-tight">Runners</h2>
       <p class="text-xs text-slate-500 dark:text-zinc-400">
-        {{ runner_stats.idle }} idle · {{ runner_stats.active }} active · {{ runner_stats.offline }} offline
+        {{ runner_stats.active }} busy · {{ runner_stats.idle }} idle{% if runner_stats.offline %} · <span class="text-red-600 dark:text-red-400">{{ runner_stats.offline }} offline</span>{% else %} · 0 offline{% endif %}
       </p>
+    </div>
+    {% if queue.count %}
+      <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium {% if queue.oldest_seconds > 120 %}bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200{% else %}bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-200{% endif %}">
+        <span class="h-1.5 w-1.5 rounded-full {% if queue.oldest_seconds > 120 %}bg-amber-500{% else %}bg-slate-400{% endif %}"></span>
+        {{ queue.count }} queued · oldest waiting {{ queue.oldest_label }}
+      </span>
+    {% else %}
+      <span class="text-xs text-slate-500 dark:text-zinc-400">Nothing queued</span>
     {% endif %}
   </div>
+
+  <dl class="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200 dark:border-zinc-800 dark:bg-zinc-800 md:grid-cols-4">
+    <div class="bg-white px-4 py-3 dark:bg-zinc-900">
+      <dt class="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Jobs · {{ job_stats.window }}</dt>
+      <dd class="mt-1 font-mono text-xl font-semibold tabular-nums">{{ job_stats.count }}</dd>
+    </div>
+    <div class="bg-white px-4 py-3 dark:bg-zinc-900">
+      <dt class="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Pass rate</dt>
+      <dd class="mt-1 font-mono text-xl font-semibold tabular-nums">
+        {% if job_stats.pass_rate is not None %}{{ job_stats.pass_rate|floatformat:0 }}%{% else %}—{% endif %}
+        {% if job_stats.failures %}<span class="ml-1 text-xs font-normal text-red-600 dark:text-red-400">{{ job_stats.failures }} failed</span>{% endif %}
+      </dd>
+    </div>
+    <div class="bg-white px-4 py-3 dark:bg-zinc-900">
+      <dt class="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Queue wait p50 / p95</dt>
+      <dd class="mt-1 font-mono text-xl font-semibold tabular-nums">
+        {{ job_stats.wait_p50 }} <span class="text-slate-400 dark:text-zinc-500">/</span>
+        <span class="{% if job_stats.wait_p95_seconds and job_stats.wait_p95_seconds > 300 %}text-amber-600 dark:text-amber-400{% endif %}">{{ job_stats.wait_p95 }}</span>
+      </dd>
+    </div>
+    <div class="bg-white px-4 py-3 dark:bg-zinc-900">
+      <dt class="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Median job</dt>
+      <dd class="mt-1 font-mono text-xl font-semibold tabular-nums">{{ job_stats.duration_p50 }}</dd>
+    </div>
+  </dl>
+
+  <form
+    id="runner-filters"
+    class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2"
+    hx-get="/fragments/runners/"
+    hx-target="#{{ prefix }}runner-list"
+    hx-swap="outerHTML"
+    hx-trigger="change"
+    aria-label="Job history filters"
+  >
+    {% if request.GET.host %}<input type="hidden" name="host" value="{{ request.GET.host }}" />{% endif %}
+    <fieldset class="seg">
+      <legend class="sr-only">Outcome</legend>
+      {% for value, label in outcome_choices %}
+        <label><input type="radio" name="outcome" value="{{ value }}" {% if filters.outcome == value %}checked{% endif %} /><span>{{ label }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <fieldset class="seg">
+      <legend class="sr-only">Window</legend>
+      {% for value, label in window_choices %}
+        <label><input type="radio" name="hours" value="{{ value }}" {% if filters.hours == value %}checked{% endif %} /><span>{{ label }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <label class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
+      <span class="sr-only">Workflow</span>
+      <select name="workflow" class="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+        <option value="">All workflows</option>
+        {% for name in workflow_choices %}
+          <option value="{{ name }}" {% if filters.workflow == name %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+        {% if filters.workflow and filters.workflow not in workflow_choices %}
+          <option value="{{ filters.workflow }}" selected>{{ filters.workflow }}</option>
+        {% endif %}
+      </select>
+    </label>
+    {% if not filters.is_default %}
+      <button
+        type="button"
+        class="text-xs text-sky-700 hover:underline dark:text-sky-400"
+        hx-get="/fragments/runners/{% if request.GET.host %}?host={{ request.GET.host|urlencode }}{% endif %}"
+        hx-target="#{{ prefix }}runner-list"
+        hx-swap="outerHTML"
+      >Reset</button>
+    {% endif %}
+    {% if filters.outcome != "all" %}
+      <span class="text-[0.7rem] text-slate-400 dark:text-zinc-500">Running jobs always shown</span>
+    {% endif %}
+  </form>
+
   {% if runners %}
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-      {% for runner in runners %}
-        <article
-          class="flex rounded-lg border border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/60{% if runner.busy %} busy-pulse{% endif %}"
-        >
-          <div
-            class="w-1 shrink-0 {% if runner.status == 'active' %}bg-sky-500{% elif runner.status == 'idle' %}bg-emerald-500{% else %}bg-zinc-400 dark:bg-zinc-600{% endif %}"
-          ></div>
-          <div class="min-w-0 flex-1 p-3.5">
-            <div class="flex items-start justify-between gap-2">
-              <h3 class="text-sm font-medium">{{ runner.name }}</h3>
-              {% if runner.status == "active" %}
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-sky-700 dark:text-sky-300">
-                  <span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
-                  active
-                </span>
-              {% elif runner.status == "idle" %}
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                  idle
-                </span>
-              {% else %}
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400">
-                  <span class="h-1.5 w-1.5 rounded-full bg-zinc-400"></span>
-                  offline
-                </span>
-              {% endif %}
-            </div>
-            {% if runner.labels %}
-              <p class="mt-2 text-xs text-slate-500 dark:text-zinc-400">{{ runner.labels|join:", " }}</p>
-            {% endif %}
-            {% if runner.busy %}
-              {% if runner.current_workflow_name or runner.current_job_name %}
-                <div class="mt-2 space-y-0.5 text-xs">
-                  {% if runner.current_html_url %}
-                    <a
-                      href="{{ runner.current_html_url }}"
-                      class="font-medium text-sky-600 hover:underline dark:text-sky-400"
-                      target="_blank"
-                      rel="noreferrer"
-                    >{{ runner.current_workflow_name|default:runner.current_job_name }}</a>
-                  {% else %}
-                    <p class="font-medium text-sky-600 dark:text-sky-400">
-                      {{ runner.current_workflow_name|default:runner.current_job_name }}
-                    </p>
-                  {% endif %}
-                  {% if runner.current_pr_number %}
-                    <p class="font-medium text-slate-700 dark:text-zinc-200">
-                      <a
-                        href="https://github.com/{{ runner.current_repository }}/pull/{{ runner.current_pr_number }}"
-                        class="hover:underline"
-                        target="_blank"
-                        rel="noreferrer"
-                      >PR #{{ runner.current_pr_number }}</a>
-                    </p>
-                  {% endif %}
-                  <p class="text-slate-500 dark:text-zinc-400">
-                    {% if runner.current_job_name and runner.current_workflow_name %}
-                      {{ runner.current_job_name }}
-                      {% if runner.current_repository %} · {{ runner.current_repository }}{% endif %}
-                    {% elif runner.current_repository %}
-                      {{ runner.current_repository }}
+    <div class="mt-4">
+      <div class="grid grid-cols-[7.5rem_minmax(0,1fr)_3rem] items-end gap-x-3 sm:grid-cols-[10rem_minmax(0,1fr)_3.5rem]">
+        <span class="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">Last {{ filters.window_label }}</span>
+        <div class="relative h-4">
+          {% for offset, label in timeline.ticks %}
+            <span class="absolute -translate-x-1/2 font-mono text-[0.65rem] tabular-nums text-slate-400 dark:text-zinc-500" style="left: {{ offset|floatformat:2 }}%">{{ label }}</span>
+          {% endfor %}
+        </div>
+        <span class="text-right text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 dark:text-zinc-400">busy</span>
+      </div>
+
+      <ul class="mt-1.5 space-y-1.5">
+        {% for row in timeline.rows %}
+          {% with runner=row.runner %}
+            <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_3rem] items-center gap-x-3 sm:grid-cols-[10rem_minmax(0,1fr)_3.5rem]">
+              <div class="flex min-w-0 items-center gap-2">
+                <span
+                  class="h-2 w-2 shrink-0 rounded-full {% if runner.status == 'active' %}bg-sky-500 live-pulse{% elif runner.status == 'idle' %}bg-emerald-500{% else %}bg-red-500{% endif %}"
+                  title="{{ runner.status }}"
+                ></span>
+                <span class="truncate text-sm font-medium" title="{{ runner.labels|join:', ' }}">{{ runner.name }}</span>
+                <span class="sr-only">{{ runner.status }}</span>
+              </div>
+
+              <div class="relative h-7 overflow-hidden rounded bg-slate-100 dark:bg-zinc-800/70{% if runner.status == 'offline' %} timeline-offline{% endif %}">
+                {% for offset, label in timeline.ticks %}
+                  <span class="absolute inset-y-0 w-px bg-slate-200 dark:bg-zinc-700/60" style="left: {{ offset|floatformat:2 }}%"></span>
+                {% endfor %}
+                {% for bar in row.bars %}
+                  <a
+                    href="{{ bar.job.html_url|default:'#' }}"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="{{ bar.label }}"
+                    class="job-bar job-{{ bar.tone }} absolute inset-y-1 rounded-sm"
+                    style="left: {{ bar.left|floatformat:2 }}%; width: {{ bar.width|floatformat:2 }}%"
+                  ><span class="sr-only">{{ bar.label }}</span></a>
+                {% endfor %}
+              </div>
+
+              <span class="text-right font-mono text-xs tabular-nums text-slate-500 dark:text-zinc-400">{{ row.busy_percent|floatformat:0 }}%</span>
+
+              {% if runner.busy %}
+                <p class="col-start-2 col-end-4 mt-0.5 truncate text-xs text-slate-600 dark:text-zinc-300">
+                  <span class="text-sky-600 dark:text-sky-400">▸</span>
+                  {% if runner.current_workflow_name or runner.current_job_name %}
+                    {% if runner.current_html_url %}
+                      <a href="{{ runner.current_html_url }}" class="font-medium text-sky-700 hover:underline dark:text-sky-300" target="_blank" rel="noreferrer">{{ runner.current_workflow_name|default:runner.current_job_name }}</a>
+                    {% else %}
+                      <span class="font-medium text-sky-700 dark:text-sky-300">{{ runner.current_workflow_name|default:runner.current_job_name }}</span>
                     {% endif %}
-                    {% if runner.current_head_branch %}
+                    {% if runner.current_job_name and runner.current_workflow_name %} · {{ runner.current_job_name }}{% endif %}
+                    {% if runner.current_pr_number %}
+                      · <a href="https://github.com/{{ runner.current_repository }}/pull/{{ runner.current_pr_number }}" class="font-medium hover:underline" target="_blank" rel="noreferrer">PR #{{ runner.current_pr_number }}</a>
+                    {% elif runner.current_head_branch %}
                       · {{ runner.current_head_branch }}
                     {% endif %}
-                    {% if runner.current_started_at %}
-                      · {{ runner.current_started_at|duration_short }}
-                    {% endif %}
-                  </p>
-                </div>
-              {% else %}
-                <p class="mt-2 text-xs font-medium text-sky-600 dark:text-sky-400">Busy</p>
+                    {% if runner.current_repository %}<span class="text-slate-400 dark:text-zinc-500"> · {{ runner.current_repository }}</span>{% endif %}
+                    {% if runner.current_started_at %}<span class="font-mono tabular-nums text-slate-500 dark:text-zinc-400"> · {{ runner.current_started_at|duration_short }}</span>{% endif %}
+                  {% else %}
+                    <span class="font-medium text-sky-700 dark:text-sky-300">Busy</span>
+                  {% endif %}
+                </p>
               {% endif %}
-            {% endif %}
-          </div>
-        </article>
-      {% endfor %}
+            </li>
+          {% endwith %}
+        {% endfor %}
+      </ul>
+
+      <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.7rem] text-slate-500 dark:text-zinc-400">
+        <span class="inline-flex items-center gap-1.5"><span class="job-bar job-success inline-block h-2.5 w-4 rounded-sm"></span>passed</span>
+        <span class="inline-flex items-center gap-1.5"><span class="job-bar job-failure inline-block h-2.5 w-4 rounded-sm"></span>failed</span>
+        <span class="inline-flex items-center gap-1.5"><span class="job-bar job-neutral inline-block h-2.5 w-4 rounded-sm"></span>cancelled / skipped</span>
+        <span class="inline-flex items-center gap-1.5"><span class="job-bar job-running inline-block h-2.5 w-4 rounded-sm"></span>running</span>
+      </div>
     </div>
   {% else %}
-    <p class="text-sm text-slate-500 dark:text-zinc-400">No runners found.</p>
+    <p class="mt-4 text-sm text-slate-500 dark:text-zinc-400">No runners found.</p>
+  {% endif %}
+
+  {% if workflows %}
+    <div class="monitor-table-scroll mt-6">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 dark:border-zinc-800">
+            <th scope="col" class="py-2 pr-3 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Workflow · {{ filters.window_label }}</th>
+            <th scope="col" class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Jobs</th>
+            <th scope="col" class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Pass</th>
+            <th scope="col" class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Duration p50 / p95</th>
+            <th scope="col" class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Wait p50</th>
+            <th scope="col" class="py-2 pl-3 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-slate-500">Last</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-zinc-800/80">
+          {% for wf in workflows %}
+            <tr>
+              <td class="py-2 pr-3">
+                <span class="font-medium">{{ wf.workflow }}</span>
+                <span class="ml-1 text-xs text-slate-500 dark:text-zinc-400">{{ wf.repository|short_repo }}</span>
+              </td>
+              <td class="px-3 py-2 text-right font-mono tabular-nums">{{ wf.count }}</td>
+              <td class="px-3 py-2 text-right font-mono tabular-nums {% if wf.pass_rate is not None and wf.pass_rate < 80 %}text-red-600 dark:text-red-400{% endif %}">
+                {% if wf.pass_rate is not None %}{{ wf.pass_rate|floatformat:0 }}%{% else %}—{% endif %}
+              </td>
+              <td class="px-3 py-2 text-right font-mono tabular-nums">{{ wf.duration_p50 }} <span class="text-slate-400 dark:text-zinc-500">/ {{ wf.duration_p95 }}</span></td>
+              <td class="px-3 py-2 text-right font-mono tabular-nums">{{ wf.wait_p50 }}</td>
+              <td class="py-2 pl-3 text-right">
+                <a href="{{ wf.last.html_url|default:'#' }}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:underline dark:text-zinc-400">
+                  <span class="h-1.5 w-1.5 rounded-full {% if wf.last.conclusion == 'success' %}bg-emerald-500{% elif wf.last.conclusion == 'failure' or wf.last.conclusion == 'timed_out' %}bg-red-500{% elif not wf.last.completed_at %}bg-sky-500{% else %}bg-zinc-400{% endif %}"></span>
+                  {{ wf.last.started_at|relative_age }}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% elif runners %}
+    <p class="mt-4 text-xs text-slate-500 dark:text-zinc-400">Job history fills in as the collector records runs.</p>
   {% endif %}
 </div>

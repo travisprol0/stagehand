@@ -106,3 +106,55 @@ body {
   font-size: 0.875rem;
   color: rgb(248 113 113);
 }
+
+/* Sparklines */
+.spark-line { stroke: rgb(100 116 139); }
+.spark-area { fill: rgb(100 116 139 / 0.12); }
+.spark-sky .spark-line { stroke: rgb(2 132 199); }
+.spark-sky .spark-area { fill: rgb(2 132 199 / 0.12); }
+.spark-violet .spark-line { stroke: rgb(124 58 237); }
+.spark-violet .spark-area { fill: rgb(124 58 237 / 0.12); }
+.dark .spark-sky .spark-line { stroke: rgb(56 189 248); }
+.dark .spark-violet .spark-line { stroke: rgb(167 139 250); }
+
+/* Runner timeline bars */
+.job-bar { display: block; transition: filter 120ms; }
+a.job-bar:hover { filter: brightness(1.15); outline: 1px solid rgb(15 23 42 / 0.4); }
+.job-success { background: rgb(16 185 129 / 0.75); }
+.job-failure { background: rgb(239 68 68); }
+.job-neutral { background: rgb(161 161 170 / 0.8); }
+.job-running {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgb(14 165 233),
+    rgb(14 165 233) 6px,
+    rgb(56 189 248) 6px,
+    rgb(56 189 248) 12px
+  );
+  background-size: 17px 17px;
+  animation: job-running 1s linear infinite;
+}
+@keyframes job-running { to { background-position: 17px 0; } }
+.timeline-offline {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgb(239 68 68 / 0.12) 5px,
+    rgb(239 68 68 / 0.12) 10px
+  );
+}
+
+/* Segmented filter control (radio pills) */
+.seg { display: inline-flex; border: 1px solid rgb(203 213 225); border-radius: 0.375rem; overflow: hidden; }
+.seg label { position: relative; cursor: pointer; }
+.seg label + label { border-left: 1px solid rgb(203 213 225); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: block; padding: 0.25rem 0.625rem; font-size: 0.75rem; color: rgb(71 85 105); background: #fff; }
+.seg label:hover span { background: rgb(241 245 249); }
+.seg input:checked + span { background: rgb(15 23 42); color: #fff; }
+.seg input:focus-visible + span { outline: 2px solid rgb(14 165 233); outline-offset: -2px; }
+.dark .seg, .dark .seg label + label { border-color: rgb(63 63 70); }
+.dark .seg span { background: rgb(24 24 27); color: rgb(212 212 216); }
+.dark .seg label:hover span { background: rgb(39 39 42); }
+.dark .seg input:checked + span { background: rgb(228 228 231); color: rgb(24 24 27); }

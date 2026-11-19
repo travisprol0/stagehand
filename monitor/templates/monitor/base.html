@@ -1,4 +1,4 @@
-{% load static %}
+{% load static monitor_extras %}
 <!DOCTYPE html>
 <html lang="en" class="h-full" x-data="dashboardChrome()" x-init="init()" :class="{ 'dark': dark }">
   <head>
@@ -22,8 +22,8 @@
     <style>[x-cloak] { display: none !important; }</style>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="{% static 'monitor/css/custom.css' %}" />
-    <script src="{% static 'monitor/js/dashboard.js' %}"></script>
+    <link rel="stylesheet" href="{% versioned_static 'monitor/css/custom.css' %}" />
+    <script src="{% versioned_static 'monitor/js/dashboard.js' %}"></script>
     {% block extra_head %}{% endblock %}
   </head>
   <body

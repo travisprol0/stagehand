@@ -1,0 +1,9 @@
+{% comment %}Inline trend line. Pass spark (Sparkline) and tone ("sky" | "violet" | "slate").{% endcomment %}
+{% if spark %}
+  <svg viewBox="0 0 120 28" preserveAspectRatio="none" class="spark spark-{{ tone|default:'slate' }} h-7 w-full" aria-hidden="true">
+    <polygon points="{{ spark.area }}" class="spark-area" />
+    <polyline points="{{ spark.line }}" fill="none" class="spark-line" vector-effect="non-scaling-stroke" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
+  </svg>
+{% else %}
+  <div class="h-7" aria-hidden="true"></div>
+{% endif %}

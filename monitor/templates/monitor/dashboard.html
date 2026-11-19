@@ -11,11 +11,12 @@
         <p class="text-[0.65rem] font-medium uppercase tracking-[0.22em] text-slate-500 dark:text-zinc-400">
           Stagehand
         </p>
-        <h1 class="truncate text-lg font-semibold tracking-tight">{{ host_name }}</h1>
+        <h1 class="truncate text-lg font-semibold tracking-tight">{% for section in sections %}{{ section.name }}{% if not forloop.last %} · {% endif %}{% endfor %}</h1>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
+      <span class="hidden font-mono text-xs text-slate-500 sm:inline dark:text-zinc-400">poll {{ poll_seconds }}s</span>
       <button
         type="button"
         class="rounded-md border border-slate-300 bg-white p-2 text-slate-600 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
@@ -43,9 +44,33 @@
   </div>
 </header>
 
-<main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+<main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+  <section id="fleet-section" class="panel divide-y divide-slate-100 overflow-hidden dark:divide-zinc-800" aria-label="Hosts">
+    {% for section in sections %}
+      {% include "monitor/fragments/host_block.html" with host=section.host host_name_label=section.name prefix=section.prefix qs=section.qs spark=section.spark attention=section.attention %}
+    {% endfor %}
+  </section>
+
+  <section id="runners-section" class="panel p-5" aria-labelledby="runners-heading">
+    {% include "monitor/fragments/runner_list.html" with prefix="" qs="" %}
+  </section>
+
   {% for section in sections %}
-    {% include "monitor/fragments/host_block.html" with host=section.host host_name_label=section.name host_name=host_name prefix=section.prefix qs=section.qs chart=section.chart runner_stats=section.runner_stats runners=section.runners container_stats=section.container_stats containers=section.containers attention=section.attention %}
+    <section id="{{ section.prefix }}containers-section" class="panel p-5" aria-labelledby="{{ section.prefix }}containers-heading">
+      {% if section.host %}
+        {% include "monitor/fragments/container_table.html" with prefix=section.prefix qs=section.qs containers=section.containers container_stats=section.container_stats host_label=section.name %}
+      {% else %}
+        <h2 id="{{ section.prefix }}containers-heading" class="mb-3 text-sm font-semibold tracking-tight">Containers{% if show_host %} <span class="font-normal text-slate-500 dark:text-zinc-400">· {{ section.name }}</span>{% endif %}</h2>
+        <div
+          id="{{ section.prefix }}container-table"
+          hx-get="/fragments/containers/{{ section.qs }}"
+          hx-trigger="every {{ poll_seconds }}s, refresh from:body"
+          hx-swap="outerHTML"
+        >
+          {% include "monitor/fragments/empty_state.html" with message="No host data yet. Start the metrics collector." %}
+        </div>
+      {% endif %}
+    </section>
   {% endfor %}
 
   <div

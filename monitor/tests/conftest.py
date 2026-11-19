@@ -123,3 +123,12 @@ def container_snapshots(db, host, container):
             memory_bytes=100_000_000,
         ),
     ]
+
+
+@pytest.fixture(autouse=True)
+def _reset_github_run_cache():
+    from monitor.collectors import github
+
+    github._SYNCED_RUNS.clear()
+    yield
+    github._SYNCED_RUNS.clear()

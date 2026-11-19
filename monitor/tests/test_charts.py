@@ -1,8 +1,9 @@
-import pytest
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
+import pytest
 from django.test import Client, override_settings
 from django.utils import timezone
 

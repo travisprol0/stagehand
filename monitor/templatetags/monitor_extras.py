@@ -91,3 +91,43 @@ def remaining_bytes(used, total):
     except (TypeError, ValueError):
         return None
     return max(0, free)
+
+
+@register.filter
+def level_text(value) -> str:
+    """Text colour for a utilisation percent: neutral until it matters."""
+    percent = _as_float(value)
+    if percent is None:
+        return "text-slate-400 dark:text-zinc-500"
+    if percent >= 90:
+        return "text-red-600 dark:text-red-400"
+    if percent >= 70:
+        return "text-amber-600 dark:text-amber-400"
+    return ""
+
+
+@register.filter
+def short_repo(full_name) -> str:
+    """owner/repo -> repo."""
+    if not full_name:
+        return ""
+    return str(full_name).rsplit("/", 1)[-1]
+
+
+@register.simple_tag
+def versioned_static(path: str) -> str:
+    """Static URL with ?v=<mtime> so browsers drop cached CSS/JS after a deploy
+    (the storage backend doesn't hash file names)."""
+    from django.contrib.staticfiles import finders
+    from django.templatetags.static import static
+
+    url = static(path)
+    found = finders.find(path)
+    if not found:
+        return url
+    try:
+        import os
+
+        return f"{url}?v={int(os.path.getmtime(found))}"
+    except OSError:
+        return url
