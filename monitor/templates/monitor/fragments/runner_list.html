@@ -61,6 +61,16 @@
                       {{ runner.current_workflow_name|default:runner.current_job_name }}
                     </p>
                   {% endif %}
+                  {% if runner.current_pr_number %}
+                    <p class="font-medium text-slate-700 dark:text-zinc-200">
+                      <a
+                        href="https://github.com/{{ runner.current_repository }}/pull/{{ runner.current_pr_number }}"
+                        class="hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >PR #{{ runner.current_pr_number }}</a>
+                    </p>
+                  {% endif %}
                   <p class="text-slate-500 dark:text-zinc-400">
                     {% if runner.current_job_name and runner.current_workflow_name %}
                       {{ runner.current_job_name }}

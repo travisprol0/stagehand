@@ -83,12 +83,6 @@ def attention_items(host: Host) -> list[dict[str, str]]:
                 "text": f"{container.name}: {container.state_error}",
             }
         )
-    for runner in get_host_runners(host).filter(busy=True):
-        label = runner.current_workflow_name or runner.current_job_name or "unknown job"
-        extra = runner.current_repository or runner.current_head_branch
-        if extra:
-            label = f"{label} ({extra})"
-        items.append({"level": "info", "text": f"{runner.name}: {label}"})
     return items
 
 

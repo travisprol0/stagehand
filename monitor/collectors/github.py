@@ -20,6 +20,7 @@ _EMPTY_JOB = {
     "current_html_url": "",
     "current_started_at": None,
     "current_head_branch": "",
+    "current_pr_number": None,
 }
 
 _BUSY_JOB_STATUSES = {"in_progress", "queued"}
@@ -106,8 +107,16 @@ def _org_recent_repos(client, api_url: str, org: str) -> list[str]:
     return names
 
 
-def _job_fields(job: dict, repository: str) -> dict:
+def _pr_number(run: dict) -> int | None:
+    pulls = run.get("pull_requests") or []
+    if pulls and isinstance(pulls[0], dict) and pulls[0].get("number"):
+        return int(pulls[0]["number"])
+    return None
+
+
+def _job_fields(job: dict, repository: str, run: dict | None = None) -> dict:
     return {
+        "current_pr_number": _pr_number(run or {}),
         "current_job_name": job.get("name") or "",
         "current_workflow_name": job.get("workflow_name") or "",
         "current_repository": repository,
@@ -175,7 +184,7 @@ def _jobs_for_busy_runners(client, busy_ids: set[int]) -> dict[int, dict]:
                     continue
                 if job.get("status") not in _BUSY_JOB_STATUSES:
                     continue
-                found[int(runner_id)] = _job_fields(job, full_name)
+                found[int(runner_id)] = _job_fields(job, full_name, run)
                 remaining.discard(int(runner_id))
     return found
 

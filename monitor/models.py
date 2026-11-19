@@ -84,6 +84,7 @@ class GitHubRunner(models.Model):
     current_html_url = models.URLField(max_length=512, blank=True)
     current_started_at = models.DateTimeField(null=True, blank=True)
     current_head_branch = models.CharField(max_length=255, blank=True)
+    current_pr_number = models.PositiveIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

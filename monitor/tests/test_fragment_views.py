@@ -28,7 +28,7 @@ def test_host_summary_fragment(client, host):
 
 
 @pytest.mark.django_db
-def test_host_summary_attention_includes_busy_job(client, host, runner):
+def test_host_summary_attention_omits_busy_runners(client, host, runner):
     runner.busy = True
     runner.status = "active"
     runner.current_workflow_name = "NUC Nightly Maintenance"
@@ -36,8 +36,8 @@ def test_host_summary_attention_includes_busy_job(client, host, runner):
 
     content = client.get("/fragments/host-summary/").content.decode()
 
-    assert "NUC Nightly Maintenance" in content
-    assert "talos-runner-1" in content
+    assert "NUC Nightly Maintenance" not in content
+    assert "talos-runner-1: " not in content
 
 
 @pytest.mark.django_db

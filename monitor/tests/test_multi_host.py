@@ -230,3 +230,29 @@ def test_probe_uses_mock_free_path_for_unknown_target():
         fake.set_missing_host_key_policy.call_args.args[0],
         remote.paramiko.RejectPolicy,
     )
+
+
+def test_pr_number_from_run_payload():
+    from monitor.collectors.github import _pr_number
+
+    assert _pr_number({"pull_requests": [{"number": 42}]}) == 42
+    assert _pr_number({"pull_requests": []}) is None
+    assert _pr_number({}) is None
+
+
+@pytest.mark.django_db
+def test_runner_list_links_pr(client, host):
+    GitHubRunner.objects.create(
+        host=host,
+        runner_id=9,
+        name="talos-1",
+        labels=["talos"],
+        status=RunnerStatus.ACTIVE,
+        busy=True,
+        current_workflow_name="CI",
+        current_repository="travisprol0/lattice-log",
+        current_pr_number=42,
+    )
+    content = client.get("/fragments/runners/").content.decode()
+    assert "https://github.com/travisprol0/lattice-log/pull/42" in content
+    assert "PR #42" in content
