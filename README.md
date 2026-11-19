@@ -9,6 +9,7 @@ Private infrastructure monitor for hosts **talos** (local) and **hermes** (remot
 - **Host** — CPU, memory, load, disk, and network via `psutil` (local) or `/proc` over SSH (remote)
 - **Docker** — container status, health, and resource usage via the local read-only Docker socket, or `ssh://` for remote hosts
 - **GitHub Actions** — self-hosted runner idle/active/offline state via the GitHub REST API
+- **Runner job history** — every job on our runners (queued → started → finished) from the Actions runs/jobs API, powering the runner timeline, queue-wait p50/p95, pass rate, and per-workflow stats. Completed runs are fetched once; the dashboard's history filters default to successful jobs (running jobs always show)
 
 On **talos**, this monitors the four lattice-runner registrations (`talos-1`…`talos-4`)
 for repo `travisprol0/lattice-log`. lattice-log CI uses those runners plus **host**

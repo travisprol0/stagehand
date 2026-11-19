@@ -8,7 +8,13 @@ from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
 from monitor.collectors.base import BaseCollector
-from monitor.models import GitHubRunner, Host, RunnerStatus, get_or_create_host
+from monitor.models import (
+    GitHubRunner,
+    Host,
+    RunnerJob,
+    RunnerStatus,
+    get_or_create_host,
+)
 from monitor.services.github_runners import runners_endpoint as _runners_endpoint
 
 logger = logging.getLogger(__name__)
@@ -126,35 +132,82 @@ def _job_fields(job: dict, repository: str, run: dict | None = None) -> dict:
     }
 
 
-def _jobs_for_busy_runners(client, busy_ids: set[int]) -> dict[int, dict]:
-    if not busy_ids:
-        return {}
-    api_url = settings.GITHUB_API_URL.rstrip("/")
+# run_id -> run.updated_at we last synced jobs for. Completed runs are fetched
+# once; queued/in-progress runs are re-fetched every cycle. Module-level so it
+# survives across collector instances inside one collect_metrics process.
+_SYNCED_RUNS: dict[int, str] = {}
+_RECENT_RUNS = 30
+
+
+def _is_ours(job: dict, runner_ids: set[int], hosts: list[Host]) -> bool:
+    """Jobs on our self-hosted runners, or self-hosted jobs still queued."""
+    runner_id = job.get("runner_id")
+    if runner_id is not None and int(runner_id) in runner_ids:
+        return True
+    runner_name = job.get("runner_name") or ""
+    if runner_name and any(runner_name.startswith(f"{h.name}-") for h in hosts):
+        return True
+    if not runner_name and job.get("status") in _BUSY_JOB_STATUSES:
+        return "self-hosted" in (job.get("labels") or [])
+    return False
+
+
+def _store_job(job: dict, repository: str, run: dict, hosts: list[Host]) -> None:
+    runner_name = job.get("runner_name") or ""
+    status = job.get("status") or ""
+    started_at = _parse_github_dt(job.get("started_at"))
+    if status == "queued" or not runner_name:
+        # GitHub stamps started_at at queue time; it isn't a real start yet.
+        started_at = None
+    RunnerJob.objects.update_or_create(
+        github_job_id=int(job["id"]),
+        defaults={
+            "run_id": int(job.get("run_id") or run.get("id") or 0),
+            "host": host_for_runner_name(runner_name, hosts) if runner_name else None,
+            "runner_id": job.get("runner_id"),
+            "runner_name": runner_name,
+            "repository": repository,
+            "workflow_name": job.get("workflow_name") or run.get("name") or "",
+            "job_name": job.get("name") or "",
+            "head_branch": job.get("head_branch") or run.get("head_branch") or "",
+            "pr_number": _pr_number(run),
+            "html_url": job.get("html_url") or "",
+            "status": status,
+            "conclusion": job.get("conclusion") or "",
+            "created_at": _parse_github_dt(job.get("created_at")),
+            "started_at": started_at,
+            "completed_at": _parse_github_dt(job.get("completed_at")),
+        },
+    )
+
+
+def _watched_repos(client, api_url: str) -> list[str]:
     repos = _watch_repos()
+    if settings.GITHUB_ORG:
+        for name in _org_recent_repos(client, api_url, settings.GITHUB_ORG):
+            if name not in repos:
+                repos.append(name)
+    return [name for name in repos if "/" in name]
+
+
+def _sync_jobs(client, runner_ids: set[int], hosts: list[Host]) -> dict[int, dict]:
+    """Record recent jobs and return the in-progress job for each busy runner."""
+    api_url = settings.GITHUB_API_URL.rstrip("/")
     try:
-        if settings.GITHUB_ORG:
-            for name in _org_recent_repos(client, api_url, settings.GITHUB_ORG):
-                if name not in repos:
-                    repos.append(name)
+        repos = _watched_repos(client, api_url)
     except httpx.HTTPError as exc:
         logger.warning("Failed to list GitHub repos for runner jobs: %s", exc)
         return {}
 
-    found: dict[int, dict] = {}
-    remaining = set(busy_ids)
+    current: dict[int, dict] = {}
     for full_name in repos:
-        if not remaining:
-            break
-        if "/" not in full_name:
-            continue
         try:
             runs_payload = _json_get(
                 client,
-                f"{api_url}/repos/{full_name}/actions/runs"
-                f"?status=in_progress&per_page=20",
+                f"{api_url}/repos/{full_name}/actions/runs?per_page={_RECENT_RUNS}",
             )
         except httpx.HTTPError as exc:
-            logger.warning("Failed to list in-progress runs for %s: %s", full_name, exc)
+            logger.warning("Failed to list runs for %s: %s", full_name, exc)
             continue
         runs = (
             runs_payload.get("workflow_runs", [])
@@ -162,10 +215,13 @@ def _jobs_for_busy_runners(client, busy_ids: set[int]) -> dict[int, dict]:
             else []
         )
         for run in runs:
-            if not remaining:
-                break
             run_id = run.get("id")
             if run_id is None:
+                continue
+            run_id = int(run_id)
+            finished = run.get("status") == "completed"
+            marker = str(run.get("updated_at") or "")
+            if finished and marker and _SYNCED_RUNS.get(run_id) == marker:
                 continue
             try:
                 jobs_payload = _json_get(
@@ -179,14 +235,15 @@ def _jobs_for_busy_runners(client, busy_ids: set[int]) -> dict[int, dict]:
                 jobs_payload.get("jobs", []) if isinstance(jobs_payload, dict) else []
             )
             for job in jobs:
+                if job.get("id") is None or not _is_ours(job, runner_ids, hosts):
+                    continue
+                _store_job(job, full_name, run, hosts)
                 runner_id = job.get("runner_id")
-                if runner_id not in remaining:
-                    continue
-                if job.get("status") not in _BUSY_JOB_STATUSES:
-                    continue
-                found[int(runner_id)] = _job_fields(job, full_name, run)
-                remaining.discard(int(runner_id))
-    return found
+                if job.get("status") in _BUSY_JOB_STATUSES and runner_id is not None:
+                    current[int(runner_id)] = _job_fields(job, full_name, run)
+            if finished and marker:
+                _SYNCED_RUNS[run_id] = marker
+    return current
 
 
 def _fetch_all_runners(client, start_url: str) -> list[dict]:
@@ -236,12 +293,8 @@ class GitHubRunnerCollector(BaseCollector):
                 timeout=httpx.Timeout(10.0),
             ) as client:
                 runners = _fetch_all_runners(client, endpoint)
-                busy_ids = {
-                    int(runner["id"])
-                    for runner in runners
-                    if runner.get("busy") and runner.get("status") != "offline"
-                }
-                jobs_by_runner = _jobs_for_busy_runners(client, busy_ids)
+                runner_ids = {int(runner["id"]) for runner in runners}
+                jobs_by_runner = _sync_jobs(client, runner_ids, hosts)
         except httpx.HTTPError as exc:
             logger.warning("Failed to fetch GitHub runners: %s", exc)
             return

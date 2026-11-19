@@ -64,21 +64,30 @@ def test_dashboard_has_responsive_grid_classes(client, host):
 
 
 @pytest.mark.django_db
-def test_dashboard_pairs_chart_and_runners_on_large_screens(client, host, host_snapshots, runner):
-    response = client.get("/")
-    content = response.content.decode()
+def test_dashboard_stacks_fleet_runners_then_containers(
+    client, host, host_snapshots, runner
+):
+    content = client.get("/").content.decode()
 
-    assert "lg:grid-cols-3" in content
-    assert "lg:col-span-2" in content
-    assert "lg:col-span-1" in content
-    assert "lg:grid-cols-1" in content
-    assert "xl:grid-cols-4" not in content
+    fleet = content.index('id="fleet-section"')
+    runners = content.index('id="runners-section"')
+    containers = content.index('id="containers-section"')
+    assert fleet < runners < containers
+    # The hour chart is tucked behind the host row, not beside the runners.
     assert 'id="charts-section"' in content
-    assert 'id="runners-section"' in content
-    assert 'id="containers-section"' in content
-    assert "lg:min-h-72" in content
-    assert "lg:max-h-72" not in content
-    assert "overflow-y-auto" not in content
+    assert 'x-show="open"' in content
+    assert "lg:col-span-2" not in content
+    # Old rainbow KPI tiles are gone.
+    assert "bg-indigo-50" not in content
+    assert "bg-cyan-50" not in content
+
+
+@pytest.mark.django_db
+def test_host_row_shows_sparklines(client, host, host_snapshots):
+    content = client.get("/fragments/host-summary/").content.decode()
+
+    assert content.count('class="spark ') == 2  # CPU + memory
+    assert "<polyline" in content
 
 
 @pytest.mark.django_db

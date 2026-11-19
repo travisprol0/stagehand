@@ -567,7 +567,8 @@ def test_health_ok(client):
 @pytest.mark.django_db
 def test_fragments_empty_host(client):
     assert b"No host data" in client.get("/fragments/containers/").content
-    assert b"No host data" in client.get("/fragments/runners/").content
+    # Runners are fleet-wide now: no runners rather than no host.
+    assert b"No runners found" in client.get("/fragments/runners/").content
 
 
 @pytest.mark.django_db

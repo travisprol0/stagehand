@@ -100,6 +100,60 @@ class GitHubRunner(models.Model):
         return self.name
 
 
+class RunnerJob(models.Model):
+    """One GitHub Actions job that ran (or is waiting to run) on our runners.
+
+    `created_at` is when GitHub queued the job, `started_at` when a runner
+    picked it up — the gap is the queue wait.
+    """
+
+    github_job_id = models.BigIntegerField(unique=True)
+    run_id = models.BigIntegerField(db_index=True)
+    host = models.ForeignKey(
+        Host,
+        on_delete=models.SET_NULL,
+        related_name="jobs",
+        null=True,
+        blank=True,
+    )
+    runner_id = models.BigIntegerField(null=True, blank=True)
+    runner_name = models.CharField(max_length=255, blank=True)
+    repository = models.CharField(max_length=255)
+    workflow_name = models.CharField(max_length=255, blank=True)
+    job_name = models.CharField(max_length=255, blank=True)
+    head_branch = models.CharField(max_length=255, blank=True)
+    pr_number = models.PositiveIntegerField(null=True, blank=True)
+    html_url = models.URLField(max_length=512, blank=True)
+    status = models.CharField(max_length=32)
+    conclusion = models.CharField(max_length=32, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-started_at"]
+        indexes = [
+            models.Index(fields=["started_at"], name="runnerjob_started_idx"),
+            models.Index(fields=["status"], name="runnerjob_status_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.workflow_name}/{self.job_name}@{self.runner_name or '?'}"
+
+    @property
+    def queue_seconds(self) -> float | None:
+        if self.created_at is None or self.started_at is None or not self.runner_name:
+            return None
+        return max(0.0, (self.started_at - self.created_at).total_seconds())
+
+    @property
+    def duration_seconds(self) -> float | None:
+        if self.started_at is None or self.completed_at is None:
+            return None
+        return max(0.0, (self.completed_at - self.started_at).total_seconds())
+
+
 class MetricSubject(models.TextChoices):
     HOST = "host", "Host"
     CONTAINER = "container", "Container"

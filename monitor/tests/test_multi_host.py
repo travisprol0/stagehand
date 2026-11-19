@@ -198,7 +198,9 @@ def test_dashboard_renders_section_per_host(remote_settings, client, host):
     content = client.get("/").content.decode()
     assert 'id="host-summary"' in content
     assert 'id="hermes-host-summary"' in content
-    assert 'hx-get="/fragments/runners/?host=hermes"' in content
+    # One fleet-wide runner panel; per-host containers.
+    assert content.count('id="runner-list"') == 1
+    assert 'hx-get="/fragments/containers/?host=hermes"' in content
     assert "hermes-1" in content
 
 

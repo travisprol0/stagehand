@@ -8,6 +8,26 @@ def get_host_containers(host: Host):
     return DockerContainer.objects.filter(host=host).exclude(status="removed")
 
 
+def _container_rank(container: DockerContainer) -> int:
+    if container.health == "unhealthy" or container.state_error:
+        return 0
+    if container.status != "running":
+        return 1
+    return 2
+
+
+def containers_for_display(host: Host) -> list[DockerContainer]:
+    """Problems first, then stopped, then running; each with its sparklines."""
+    from monitor.services.charts import get_container_sparklines
+
+    sparks = get_container_sparklines(host)
+    rows = list(get_host_containers(host))
+    for container in rows:
+        container.spark = sparks.get(container.pk, {})
+    rows.sort(key=lambda c: (_container_rank(c), c.name))
+    return rows
+
+
 def get_host_runners(host: Host):
     return GitHubRunner.objects.filter(host=host)
 
@@ -102,7 +122,7 @@ def build_section(name: str) -> dict:
     pages and tests are unchanged; remote hosts get a `<name>-` id prefix and a
     `?host=<name>` query on their fragment URLs.
     """
-    from monitor.services.charts import get_host_chart_data
+    from monitor.services.charts import get_host_chart_data, get_host_sparklines
 
     is_local = name == settings.HOST_NAME
     host = get_host_by_name(name)
@@ -112,10 +132,55 @@ def build_section(name: str) -> dict:
         "prefix": "" if is_local else f"{name}-",
         "qs": "" if is_local else f"?host={name}",
         "host": host,
-        "containers": get_host_containers(host) if host else [],
+        "containers": containers_for_display(host) if host else [],
         "runners": get_host_runners(host) if host else [],
         "container_stats": summarize_containers(host) if host else None,
         "runner_stats": summarize_runners(host) if host else None,
         "chart": get_host_chart_data(host) if host else None,
+        "spark": get_host_sparklines(host) if host else {},
         "attention": attention_items(host) if host else [],
+    }
+
+
+def build_runner_panel(host_name: str | None = None, filters=None) -> dict:
+    """Fleet-wide runner timeline (or one host's, when `host_name` is given)."""
+    from monitor.services.runner_jobs import (
+        OUTCOMES,
+        WINDOWS,
+        HistoryFilters,
+        build_timeline,
+        job_stats,
+        queue_snapshot,
+        workflow_names,
+        workflow_stats,
+    )
+
+    filters = filters or HistoryFilters()
+
+    order = {name: index for index, name in enumerate(configured_host_names())}
+    runners = GitHubRunner.objects.select_related("host")
+    if host_name:
+        runners = runners.filter(host__name=host_name)
+    runners = sorted(
+        runners, key=lambda r: (order.get(r.host.name, len(order)), r.name)
+    )
+    counts = {
+        "total": len(runners),
+        "idle": sum(1 for r in runners if r.status == RunnerStatus.IDLE),
+        "active": sum(1 for r in runners if r.status == RunnerStatus.ACTIVE),
+        "offline": sum(1 for r in runners if r.status == RunnerStatus.OFFLINE),
+    }
+    return {
+        "runners": runners,
+        "runner_stats": counts,
+        "timeline": build_timeline(runners, filters=filters),
+        "queue": queue_snapshot(),
+        "job_stats": job_stats(filters=filters),
+        "workflows": workflow_stats(filters=filters),
+        "filters": filters,
+        "outcome_choices": OUTCOMES.items(),
+        "window_choices": WINDOWS.items(),
+        "workflow_choices": workflow_names(),
+        "runners_qs": filters.querystring(host_name or ""),
+        "multi_host": len(order) > 1,
     }

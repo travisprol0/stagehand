@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('monitor', '0005_multi_host'),
+        ("monitor", "0005_multi_host"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='githubrunner',
-            name='current_pr_number',
+            model_name="githubrunner",
+            name="current_pr_number",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
     ]

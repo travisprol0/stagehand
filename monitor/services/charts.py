@@ -113,3 +113,87 @@ def get_host_chart_data(host: Host, *, minutes: int = 60) -> HostChartData | Non
         start_label=time_labels[0],
         end_label=time_labels[-1],
     )
+
+
+SPARK_WIDTH = 120
+SPARK_HEIGHT = 28
+SPARK_POINTS = 40
+
+
+@dataclass(frozen=True)
+class Sparkline:
+    line: str
+    area: str
+    peak: float
+
+
+def _even_sample(values: list, max_points: int) -> list:
+    if len(values) <= max_points:
+        return list(values)
+    step = (len(values) - 1) / (max_points - 1)
+    return [values[round(index * step)] for index in range(max_points)]
+
+
+def build_sparkline(
+    values: list[float | None],
+    *,
+    value_max: float | None = None,
+    floor: float = 0.0,
+) -> Sparkline | None:
+    """Small inline trend line. `value_max=None` scales to the series peak."""
+    clean = [float(v) for v in values if v is not None]
+    if len(clean) < 2:
+        return None
+    clean = _even_sample(clean, SPARK_POINTS)
+    peak = max(clean)
+    scale = value_max if value_max is not None else max(peak * 1.15, floor, 1e-9)
+    kwargs = {
+        "width": SPARK_WIDTH,
+        "height": SPARK_HEIGHT,
+        "padding": 2,
+        "value_max": scale,
+    }
+    return Sparkline(
+        line=build_polyline(clean, **kwargs),
+        area=build_area(clean, **kwargs),
+        peak=peak,
+    )
+
+
+def get_host_sparklines(host: Host, *, minutes: int = 60) -> dict:
+    rows = list(
+        MetricSnapshot.objects.for_host(host, minutes=minutes).values_list(
+            "cpu_percent", "memory_percent"
+        )
+    )
+    return {
+        "cpu": build_sparkline([row[0] for row in rows], value_max=100.0),
+        "memory": build_sparkline([row[1] for row in rows], value_max=100.0),
+    }
+
+
+def get_container_sparklines(host: Host, *, minutes: int = 60) -> dict[int, dict]:
+    """container pk -> {"cpu": Sparkline, "memory": Sparkline} in one query."""
+    since = timezone.now() - timezone.timedelta(minutes=minutes)
+    rows = (
+        MetricSnapshot.objects.filter(
+            host=host,
+            subject_type="container",
+            recorded_at__gte=since,
+            container__isnull=False,
+        )
+        .order_by("container_id", "recorded_at")
+        .values_list("container_id", "cpu_percent", "memory_bytes")
+    )
+    series: dict[int, tuple[list, list]] = {}
+    for container_id, cpu, memory in rows:
+        cpu_values, memory_values = series.setdefault(container_id, ([], []))
+        cpu_values.append(cpu)
+        memory_values.append(memory)
+    return {
+        container_id: {
+            "cpu": build_sparkline(cpu_values, floor=5.0),
+            "memory": build_sparkline(memory_values),
+        }
+        for container_id, (cpu_values, memory_values) in series.items()
+    }

@@ -108,7 +108,7 @@ def test_collect_uses_repo_scope(host):
         with patch("monitor.collectors.github.get_or_create_host", return_value=host):
             GitHubRunnerCollector().collect()
 
-    assert "/repos/owner/repo/actions/runners" in client.get.call_args.args[0]
+    assert "/repos/owner/repo/actions/runners" in client.get.call_args_list[0].args[0]
 
 
 @pytest.mark.django_db

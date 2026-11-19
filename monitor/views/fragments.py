@@ -7,8 +7,13 @@ from django.shortcuts import get_object_or_404, render
 from docker.errors import DockerException
 
 from monitor.models import DockerContainer
-from monitor.services.dashboard import build_section, configured_host_names
+from monitor.services.dashboard import (
+    build_runner_panel,
+    build_section,
+    configured_host_names,
+)
 from monitor.services.remote import docker_ssh_url, remote_ssh_target
+from monitor.services.runner_jobs import HistoryFilters
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +65,7 @@ def host_summary(request):
             "qs": section["qs"],
             "container_stats": section["container_stats"],
             "runner_stats": section["runner_stats"],
+            "spark": section["spark"],
             "attention": section["attention"],
             **_poll_context(),
         },
@@ -82,6 +88,8 @@ def containers(request):
         {
             "containers": section["containers"],
             "container_stats": section["container_stats"],
+            "host_label": section["name"],
+            "show_host": len(configured_host_names()) > 1,
             "prefix": section["prefix"],
             "qs": section["qs"],
             **_poll_context(),
@@ -101,23 +109,18 @@ def container_row(request, pk: int):
 
 
 def runners(request):
-    section = _requested_section(request)
-    if section["host"] is None:
-        return _empty(
-            request,
-            section=section,
-            element_id="runner-list",
-            fragment="runners",
-            message=NO_HOST_MESSAGE,
-        )
+    """Fleet-wide runner panel; `?host=` narrows it to one host."""
+    host_name = request.GET.get("host") or ""
+    if host_name and host_name not in configured_host_names():
+        raise Http404("Unknown host")
     return render(
         request,
         "monitor/fragments/runner_list.html",
         {
-            "runners": section["runners"],
-            "runner_stats": section["runner_stats"],
-            "prefix": section["prefix"],
-            "qs": section["qs"],
+            **build_runner_panel(
+                host_name or None, HistoryFilters.from_params(request.GET)
+            ),
+            "prefix": "",
             **_poll_context(),
         },
     )
